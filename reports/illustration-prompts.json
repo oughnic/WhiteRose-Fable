@@ -1,0 +1,972 @@
+{
+  "instructions": "Generate one square image (≥768px) per entry and save it to `file`. Then write public/art/illustrations/manifest.json as a JSON array [{\"slug\": \"<slug>\"}] listing every generated image. The app picks them up on the next page load.",
+  "count": 161,
+  "entries": [
+    {
+      "slug": "adverse-event",
+      "label": "adverse event",
+      "file": "public/art/illustrations/adverse-event.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"adverse event\" — unintended event that has negative impact upon a care process. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "adverse-event-management",
+      "label": "adverse event management",
+      "file": "public/art/illustrations/adverse-event-management.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"adverse event management\" — set of care activities performed in response to an adverse event. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "authorization-by-law",
+      "label": "authorization by law",
+      "file": "public/art/illustrations/authorization-by-law.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"authorization by law\" — provision in legislation that in certain circumstances may overrule the need for informed consent. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "automated-care",
+      "label": "automated care",
+      "file": "public/art/illustrations/automated-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"automated care\" — care initiated by a care actor and thereafter delivered by an automatic medical device. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "automatic-medical-device",
+      "label": "automatic medical device",
+      "file": "public/art/illustrations/automatic-medical-device.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"automatic medical device\" — medical device capable of performing care activities by itself or under human supervision. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-activity",
+      "label": "care activity",
+      "file": "public/art/illustrations/care-activity.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care activity\" — activity intended to improve or maintain a health state. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-activity-bundle",
+      "label": "care activity bundle",
+      "file": "public/art/illustrations/care-activity-bundle.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care activity bundle\" — set of care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-activity-delay",
+      "label": "care activity delay",
+      "file": "public/art/illustrations/care-activity-delay.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care activity delay\" — health related period during which a care activity is planned but not started. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-activity-management",
+      "label": "care activity management",
+      "file": "public/art/illustrations/care-activity-management.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care activity management\" — care activity during which the status of care activities in a care plan are changed. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-activity-mandate",
+      "label": "care activity mandate",
+      "file": "public/art/illustrations/care-activity-mandate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care activity mandate\" — care mandate assigning the right and obligation to perform specific care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-activity-period",
+      "label": "care activity period",
+      "file": "public/art/illustrations/care-activity-period.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care activity period\" — period during which care activities are performed for a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-actor",
+      "label": "care actor",
+      "file": "public/art/illustrations/care-actor.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care actor\" — organization or person participating in care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-appointment",
+      "label": "care appointment",
+      "file": "public/art/illustrations/care-appointment.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care appointment\" — appointment for a contact. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-assessment",
+      "label": "care assessment",
+      "file": "public/art/illustrations/care-assessment.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care assessment\" — care activity where an opinion is formed about health conditions of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-commitment",
+      "label": "care commitment",
+      "file": "public/art/illustrations/care-commitment.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care commitment\" — acceptance of a care request including commitment by the care actor to perform requested care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-communication",
+      "label": "care communication",
+      "file": "public/art/illustrations/care-communication.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care communication\" — care activity where at least two care actors communicate. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-contact",
+      "label": "care contact",
+      "file": "public/art/illustrations/care-contact.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care contact\" — interaction between one or more subject of care and one or more care personnel. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-data",
+      "label": "care data",
+      "file": "public/art/illustrations/care-data.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care data\" — data produced during care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-documenting",
+      "label": "care documenting",
+      "file": "public/art/illustrations/care-documenting.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care documenting\" — care activity where health records are created or maintained. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-employment",
+      "label": "care employment",
+      "file": "public/art/illustrations/care-employment.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care employment\" — mandate given by a care organization to a care personnel describing the roles and responsibilities assigned to that care personnel. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-evaluation",
+      "label": "care evaluation",
+      "file": "public/art/illustrations/care-evaluation.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care evaluation\" — care activity where aspects of at least one other care activity are evaluated. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-funds",
+      "label": "care funds",
+      "file": "public/art/illustrations/care-funds.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care funds\" — resource provided for funding care delivery. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-goal",
+      "label": "care goal",
+      "file": "public/art/illustrations/care-goal.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care goal\" — desired achievement of one or more care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-guideline",
+      "label": "care guideline",
+      "file": "public/art/illustrations/care-guideline.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care guideline\" — set of systematically developed statements based on knowledge to assist the decisions made by care actors about care activities to be performed with regard to specified health issues. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-information",
+      "label": "care information",
+      "file": "public/art/illustrations/care-information.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care information\" — information about a person relevant to their care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-information-for-import",
+      "label": "care information for import",
+      "file": "public/art/illustrations/care-information-for-import.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care information for import\" — care information that is a candidate for import into a professional health record after a care professional has confirmed its clinical relevance to that professional health record. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-information-request",
+      "label": "care information request",
+      "file": "public/art/illustrations/care-information-request.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care information request\" — request sent out by a care actor to another care actor for specific care information needed for the provision of care to a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-investigation",
+      "label": "care investigation",
+      "file": "public/art/illustrations/care-investigation.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care investigation\" — care activity with the intention to clarify one or more health conditions of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-mandate",
+      "label": "care mandate",
+      "file": "public/art/illustrations/care-mandate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care mandate\" — mandate based on a commitment and either an informed consent or an authorization by law defining the rights and obligations of one care actor with regard to their involvement in care processes performed for a specific subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-needs-assessment",
+      "label": "care needs assessment",
+      "file": "public/art/illustrations/care-needs-assessment.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care needs assessment\" — care assessment during which a care professional considers a subject of care’s health needs and determines needed care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-organization",
+      "label": "care organization",
+      "file": "public/art/illustrations/care-organization.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care organization\" — organization being a care provider. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-pathway",
+      "label": "care pathway",
+      "file": "public/art/illustrations/care-pathway.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care pathway\" — detailed guidance for each stage in the interdisciplinary management of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-performer",
+      "label": "care performer",
+      "file": "public/art/illustrations/care-performer.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care performer\" — role adopted by care personnel when performing care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-period-mandate",
+      "label": "care period mandate",
+      "file": "public/art/illustrations/care-period-mandate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care period mandate\" — care mandate commissioning a mandated period of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-personnel",
+      "label": "care personnel",
+      "file": "public/art/illustrations/care-personnel.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care personnel\" — person holding a care employment from a care organization. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-plan",
+      "label": "care plan",
+      "file": "public/art/illustrations/care-plan.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care plan\" — dynamic, personalized plan including identified needed care activity, health objectives and care goals, relating to one or more specified health needs in a care process. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-planning",
+      "label": "care planning",
+      "file": "public/art/illustrations/care-planning.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care planning\" — care activity management where a care plan is managed. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-process",
+      "label": "care process",
+      "file": "public/art/illustrations/care-process.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care process\" — set of interrelated or interacting care activities which transforms inputs into outputs. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-process-evaluation",
+      "label": "care process evaluation",
+      "file": "public/art/illustrations/care-process-evaluation.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care process evaluation\" — care evaluation where a care process is evaluated against requirements. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-professional",
+      "label": "care professional",
+      "file": "public/art/illustrations/care-professional.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care professional\" — person holding a care professional entitlement. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-professional-entitlement",
+      "label": "care professional entitlement",
+      "file": "public/art/illustrations/care-professional-entitlement.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care professional entitlement\" — professional care mandate held by a person concerning specific roles in care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-provider",
+      "label": "care provider",
+      "file": "public/art/illustrations/care-provider.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care provider\" — care actor that is able to be assigned one or more care period mandates. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-provider-activity",
+      "label": "care provider activity",
+      "file": "public/art/illustrations/care-provider-activity.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care provider activity\" — care activity performed by a care provider. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-resource",
+      "label": "care resource",
+      "file": "public/art/illustrations/care-resource.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care resource\" — resource needed to perform care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-service",
+      "label": "care service",
+      "file": "public/art/illustrations/care-service.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care service\" — result of a care process. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-service-directory",
+      "label": "care service directory",
+      "file": "public/art/illustrations/care-service-directory.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care service directory\" — directory of the types of care services offered by one or more care providers. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-service-offering",
+      "label": "care service offering",
+      "file": "public/art/illustrations/care-service-offering.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care service offering\" — set of care activities offered by care provider. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-supporting-organization",
+      "label": "care supporting organization",
+      "file": "public/art/illustrations/care-supporting-organization.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care supporting organization\" — organization that is a care third party. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-third-party",
+      "label": "care third party",
+      "file": "public/art/illustrations/care-third-party.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care third party\" — care actor other than a care provider or the subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-third-party-activity",
+      "label": "care third party activity",
+      "file": "public/art/illustrations/care-third-party-activity.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care third party activity\" — care activity performed by a care third party. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "care-treatment",
+      "label": "care treatment",
+      "file": "public/art/illustrations/care-treatment.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"care treatment\" — care activity intended to directly improve or maintain a health state. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "clinical-care",
+      "label": "clinical care",
+      "file": "public/art/illustrations/clinical-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"clinical care\" — care activity concerned with physical or mental health needs. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "clinical-care-activity-mandate",
+      "label": "clinical care activity mandate",
+      "file": "public/art/illustrations/clinical-care-activity-mandate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"clinical care activity mandate\" — care mandate to provide needed care activities concerned with the physical or mental health of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "clinical-care-plan",
+      "label": "clinical care plan",
+      "file": "public/art/illustrations/clinical-care-plan.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"clinical care plan\" — care plan addressing clinical issues. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "clinical-issue",
+      "label": "clinical issue",
+      "file": "public/art/illustrations/clinical-issue.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"clinical issue\" — health issue that is a clinical matter. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "clinical-matter",
+      "label": "clinical matter",
+      "file": "public/art/illustrations/clinical-matter.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"clinical matter\" — health matter concerned with the body or mind. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "clinical-need",
+      "label": "clinical need",
+      "file": "public/art/illustrations/clinical-need.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"clinical need\" — health need related to the body or mind. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "composition",
+      "label": "composition",
+      "file": "public/art/illustrations/composition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"composition\" — structure component containing information composed during one clinical encounter or documentation session, and committed within one health record. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "consent-competence",
+      "label": "consent competence",
+      "file": "public/art/illustrations/consent-competence.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"consent competence\" — capability of the subject of care and/or the subject of care proxy to give or withhold informed consent. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "considered-condition",
+      "label": "considered condition",
+      "file": "public/art/illustrations/considered-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"considered condition\" — potential health condition considered by a care actor on the basis of one or more observed conditions. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "continuity-facilitator-mandate",
+      "label": "continuity facilitator mandate",
+      "file": "public/art/illustrations/continuity-facilitator-mandate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"continuity facilitator mandate\" — care mandate assigning the right and obligation to monitor and coordinate the delivery of care to one subject of care including the right to retrieve relevant information and obligation to document all activities based on this mandate. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "continuity-of-care-process",
+      "label": "continuity of care process",
+      "file": "public/art/illustrations/continuity-of-care-process.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"continuity of care process\" — care process, encompassing all care provider activities and other prescribed care activities, that addresses identified or specified health issues. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "core-care-plan",
+      "label": "core care plan",
+      "file": "public/art/illustrations/core-care-plan.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"core care plan\" — knowledge providing reusable content addressing one or more specified health issues. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "discharge-report",
+      "label": "discharge report",
+      "file": "public/art/illustrations/discharge-report.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"discharge report\" — health report concerning a completed, mandated period of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "discharge-summary",
+      "label": "discharge summary",
+      "file": "public/art/illustrations/discharge-summary.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"discharge summary\" — discharge report summarizing a mandated period of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "encounter",
+      "label": "encounter",
+      "file": "public/art/illustrations/encounter.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"encounter\" — care activity period during which a contact occurs. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "entry",
+      "label": "entry",
+      "file": "public/art/illustrations/entry.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"entry\" — health record component that represents the data documenting one  observation or a series of related observations, or a  statement, an explanation of reasoning, a care intention, plan or action. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "episode-of-care",
+      "label": "episode of care",
+      "file": "public/art/illustrations/episode-of-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"episode of care\" — health related period during which care activities are performed to address one health issue as identified by one care professional. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "episodes-of-care-bundle",
+      "label": "episodes of care bundle",
+      "file": "public/art/illustrations/episodes-of-care-bundle.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"episodes of care bundle\" — group of episodes of care delineated by a health thread. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "event",
+      "label": "event",
+      "file": "public/art/illustrations/event.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"event\" — situation considered to occur at a time point. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "excluded-condition",
+      "label": "excluded condition",
+      "file": "public/art/illustrations/excluded-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"excluded condition\" — considered condition that one or more care professionals have determined not to be consistent with the known observed conditions. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "facility",
+      "label": "facility",
+      "file": "public/art/illustrations/facility.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"facility\" — place, building or equipment used for a particular purpose. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "folder",
+      "label": "folder",
+      "file": "public/art/illustrations/folder.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"folder\" — structure component used for creating hierarchical structures within an electronic health record extract and with compositions as leaf nodes. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-approach",
+      "label": "health approach",
+      "file": "public/art/illustrations/health-approach.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health approach\" — episode of care during which the care activities performed address one specific care goal. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-certificate",
+      "label": "health certificate",
+      "file": "public/art/illustrations/health-certificate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health certificate\" — official document issued by a care actor attesting the relevant health matters of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-concern",
+      "label": "health concern",
+      "file": "public/art/illustrations/health-concern.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health concern\" — health record extract that includes all health record components associated with a health thread for a specific concern. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-condition",
+      "label": "health condition",
+      "file": "public/art/illustrations/health-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health condition\" — aspect of a health state. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-condition-assessment",
+      "label": "health condition assessment",
+      "file": "public/art/illustrations/health-condition-assessment.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health condition assessment\" — care activity where an assessment related to health conditions of the subject of care is made. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-condition-delay",
+      "label": "health condition delay",
+      "file": "public/art/illustrations/health-condition-delay.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health condition delay\" — care activity delay caused by a health condition. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-condition-period",
+      "label": "health condition period",
+      "file": "public/art/illustrations/health-condition-period.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health condition period\" — health related period during which a health condition has been observed. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-issue",
+      "label": "health issue",
+      "file": "public/art/illustrations/health-issue.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health issue\" — health condition motivating care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-matter",
+      "label": "health matter",
+      "file": "public/art/illustrations/health-matter.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health matter\" — circumstance contributing to the health state of a person. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-need",
+      "label": "health need",
+      "file": "public/art/illustrations/health-need.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health need\" — health matter causing a deficit in the current health state compared to aspects of a desired future health state. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-problem",
+      "label": "health problem",
+      "file": "public/art/illustrations/health-problem.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health problem\" — health issue considered by a care actor to be a problem. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-problem-list",
+      "label": "health problem list",
+      "file": "public/art/illustrations/health-problem-list.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health problem list\" — health thread linking a set of health problems. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-record",
+      "label": "health record",
+      "file": "public/art/illustrations/health-record.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health record\" — data repository regarding the health and care of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-record-component",
+      "label": "health record component",
+      "file": "public/art/illustrations/health-record-component.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health record component\" — part of a health record that is identifiable for the purposes of referencing and revision. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-record-extract",
+      "label": "health record extract",
+      "file": "public/art/illustrations/health-record-extract.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health record extract\" — part or all of a health record extracted for the purpose of communication. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-related-period",
+      "label": "health related period",
+      "file": "public/art/illustrations/health-related-period.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health related period\" — time interval related to the health or care of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-report",
+      "label": "health report",
+      "file": "public/art/illustrations/health-report.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health report\" — health record extract conveying specifically focused care information in order to fulfil current information needs of the recipient. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-state",
+      "label": "health state",
+      "file": "public/art/illustrations/health-state.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health state\" — overall level of health of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-summary",
+      "label": "health summary",
+      "file": "public/art/illustrations/health-summary.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health summary\" — electronic health record extract containing essential care information intended for specific uses. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "health-thread",
+      "label": "health thread",
+      "file": "public/art/illustrations/health-thread.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"health thread\" — defined association between health matters as determined by one or more care actors. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "indirect-care-activity-period",
+      "label": "indirect care activity period",
+      "file": "public/art/illustrations/indirect-care-activity-period.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"indirect care activity period\" — care activity period without the involvement of the subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "informed-consent",
+      "label": "informed consent",
+      "file": "public/art/illustrations/informed-consent.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"informed consent\" — permission to perform care activities, voluntarily given by a subject of care with consent competence or by a subject of care proxy with consent competence after having been informed about the purpose and the possible results of the care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "initial-contact",
+      "label": "initial contact",
+      "file": "public/art/illustrations/initial-contact.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"initial contact\" — care contact starting a continuity of care process. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "initial-request-for-care",
+      "label": "initial request for care",
+      "file": "public/art/illustrations/initial-request-for-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"initial request for care\" — first request for care concerning one or more specific health matters to be assessed by a care provider. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "input-health-state",
+      "label": "input health state",
+      "file": "public/art/illustrations/input-health-state.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"input health state\" — health state at the start of a care process. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "integrated-care-plan",
+      "label": "integrated care plan",
+      "file": "public/art/illustrations/integrated-care-plan.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"integrated care plan\" — care plan crossing organizational, professional and contextual borders. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "intended-outcome",
+      "label": "intended outcome",
+      "file": "public/art/illustrations/intended-outcome.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"intended outcome\" — desired achievement of a care process addressing health needs. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "knowledge",
+      "label": "knowledge",
+      "file": "public/art/illustrations/knowledge.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"knowledge\" — maintained, processed, and interpreted information. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "mandate-to-export-personal-information",
+      "label": "mandate to export personal information",
+      "file": "public/art/illustrations/mandate-to-export-personal-information.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"mandate to export personal information\" — care mandate implying the right to communicate health record extracts. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "mandated-period-of-care",
+      "label": "mandated period of care",
+      "file": "public/art/illustrations/mandated-period-of-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"mandated period of care\" — set of care activity periods where a care provider is mandated to perform the care activities required to address specific health needs. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "medical-device",
+      "label": "medical device",
+      "file": "public/art/illustrations/medical-device.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"medical device\" — instrument, apparatus, implement, machine, appliance, implant, reagent for in vitro use, software, material or other similar or related article, intended by the manufacturer to be used, alone or in combination, for human beings, for one or more of the specific medical purpose(s) of\n— diagnosis, prevention, monitoring, treatment or alleviation of disease,\n— diagnosis, monitoring, treatment, alleviation of or compensation for an injury,\n— investigation, replacement, modification, or support of the anatomy or of a physiological process,\n— supporting or sustaining life,\n— control of conception,\n— disinfection of medical devices,\n— providing information by means of in vitro examination of specimens derived from the human body, and which does not achieve its primary intended action by pharmacological, immunological or metabolic means, in or on the human body, but which can be assisted in its intended function by such means. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "medicinal-product",
+      "label": "medicinal product",
+      "file": "public/art/illustrations/medicinal-product.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"medicinal product\" — pharmaceutical product or combination of pharmaceutical products that may be administered to human beings for treating or preventing disease, with the aim/purpose of making a medical diagnosis or to restore, correct or modify physiological functions. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "mental-object",
+      "label": "mental object",
+      "file": "public/art/illustrations/mental-object.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"mental object\" — thoughts, ideas, memories and concepts that exist within an individual’s mind. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "needed-care-activity",
+      "label": "needed care activity",
+      "file": "public/art/illustrations/needed-care-activity.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"needed care activity\" — care activity bundle which includes those care activities assessed as needed to address specified health need. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "non-ratified-care-information",
+      "label": "non-ratified care information",
+      "file": "public/art/illustrations/non-ratified-care-information.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"non-ratified care information\" — care information the relevance of which has not been assessed and explicitly stated as valid by a care professional. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "objection",
+      "label": "objection",
+      "file": "public/art/illustrations/objection.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"objection\" — subject of care desire that specific care activities are not performed. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "observed-condition",
+      "label": "observed condition",
+      "file": "public/art/illustrations/observed-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"observed condition\" — health condition observed by a care actor. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "other-carer",
+      "label": "other carer",
+      "file": "public/art/illustrations/other-carer.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"other carer\" — person being a care third party. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "output-health-state",
+      "label": "output health state",
+      "file": "public/art/illustrations/output-health-state.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"output health state\" — health state at the end of a care process. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "personal-health-record",
+      "label": "personal health record",
+      "file": "public/art/illustrations/personal-health-record.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"personal health record\" — health record held and maintained by the subject of care or a subject of care proxy. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "physical-object",
+      "label": "physical object",
+      "file": "public/art/illustrations/physical-object.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"physical object\". Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "point-of-care",
+      "label": "point of care",
+      "file": "public/art/illustrations/point-of-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"point of care\" — location where direct care activities are performed. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "potential-health-condition",
+      "label": "potential health condition",
+      "file": "public/art/illustrations/potential-health-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"potential health condition\" — possible future or current health condition described by a care actor. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "prescribed-self-care",
+      "label": "prescribed self-care",
+      "file": "public/art/illustrations/prescribed-self-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"prescribed self-care\" — self-care prescribed by a care professional. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "prescribed-self-care-period",
+      "label": "prescribed self-care period",
+      "file": "public/art/illustrations/prescribed-self-care-period.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"prescribed self-care period\" — care activity period where prescribed self-care activity is performed. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "prescribed-third-party-activity",
+      "label": "prescribed third party activity",
+      "file": "public/art/illustrations/prescribed-third-party-activity.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"prescribed third party activity\" — care third party activity prescribed by a care professional. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "prescriber",
+      "label": "prescriber",
+      "file": "public/art/illustrations/prescriber.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"prescriber\" — role performed by a care professional when recommending or authorising a care activity. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "process",
+      "label": "process",
+      "file": "public/art/illustrations/process.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"process\". Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "professional-health-record",
+      "label": "professional health record",
+      "file": "public/art/illustrations/professional-health-record.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"professional health record\" — health record held under the responsibility of one care provider and maintained by care professionals. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "professionally-assessed-condition",
+      "label": "professionally assessed condition",
+      "file": "public/art/illustrations/professionally-assessed-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"professionally assessed condition\" — observed condition assessed by a care professional. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "prognostic-condition",
+      "label": "prognostic condition",
+      "file": "public/art/illustrations/prognostic-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"prognostic condition\" — potential health condition representing the expected course of a health state as assessed by care professionals. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "protocol",
+      "label": "protocol",
+      "file": "public/art/illustrations/protocol.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"protocol\" — customized care guideline. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "proxy-mandate",
+      "label": "proxy mandate",
+      "file": "public/art/illustrations/proxy-mandate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"proxy mandate\" — care mandate to take decisions on behalf of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "reason-for-request-for-care",
+      "label": "reason for request for care",
+      "file": "public/art/illustrations/reason-for-request-for-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"reason for request for care\" — motive for a request for care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "record-template",
+      "label": "record template",
+      "file": "public/art/illustrations/record-template.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"record template\" — template for recording a care record. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "referral",
+      "label": "referral",
+      "file": "public/art/illustrations/referral.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"referral\" — request for care where a care professional asks a care provider to make a care commitment for a care period mandate. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "request-for-care",
+      "label": "request for care",
+      "file": "public/art/illustrations/request-for-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"request for care\" — request for care provider activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "request-for-service",
+      "label": "request for service",
+      "file": "public/art/illustrations/request-for-service.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"request for service\" — request for care where a care professional asks a care provider to perform one or more care provider activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "request-mandate",
+      "label": "request mandate",
+      "file": "public/art/illustrations/request-mandate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"request mandate\" — care mandate implying the right and obligation to request care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "resource-delay",
+      "label": "resource delay",
+      "file": "public/art/illustrations/resource-delay.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"resource delay\" — care activity delay caused by resource constraints. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "resultant-condition",
+      "label": "resultant condition",
+      "file": "public/art/illustrations/resultant-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"resultant condition\" — health condition representing an output health state. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "risk-condition",
+      "label": "risk condition",
+      "file": "public/art/illustrations/risk-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"risk condition\" — health condition representing a potential undesired future health state. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "role",
+      "label": "role",
+      "file": "public/art/illustrations/role.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"role\" — set of competencies or performances that are associated with a task. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "self-care",
+      "label": "self-care",
+      "file": "public/art/illustrations/self-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"self-care\" — care activity performed by the subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "self-care-performer",
+      "label": "self-care performer",
+      "file": "public/art/illustrations/self-care-performer.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"self-care performer\" — role played by a subject of care when performing self-care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "sharable-data-repository",
+      "label": "sharable data repository",
+      "file": "public/art/illustrations/sharable-data-repository.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"sharable data repository\" — data repository containing health record extracts, accessible for duly authorized care actors independent of their organizational affiliation and placed under the custody of a care actor. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-care",
+      "label": "social care",
+      "file": "public/art/illustrations/social-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social care\" — care activity supporting a subject of care to live in their social environment. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-care-activity-mandate",
+      "label": "social care activity mandate",
+      "file": "public/art/illustrations/social-care-activity-mandate.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social care activity mandate\" — care mandate to provide needed care activities concerned with the social environment of a subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-care-plan",
+      "label": "social care plan",
+      "file": "public/art/illustrations/social-care-plan.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social care plan\" — care plan addressing social issues. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-care-report",
+      "label": "social care report",
+      "file": "public/art/illustrations/social-care-report.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social care report\" — social record extract conveying specifically focused social care information in order to fulfil current information needs of the recipient. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-environment",
+      "label": "social environment",
+      "file": "public/art/illustrations/social-environment.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social environment\" — immediate physical and social setting in which a subject of care lives and interacts. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-issue",
+      "label": "social issue",
+      "file": "public/art/illustrations/social-issue.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social issue\" — health issue that is a social matter. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-matter",
+      "label": "social matter",
+      "file": "public/art/illustrations/social-matter.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social matter\" — health matter concerning how a subject of care lives in their social environment. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-need",
+      "label": "social need",
+      "file": "public/art/illustrations/social-need.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social need\" — health need related to social determinants of health. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "social-record-extract",
+      "label": "social record extract",
+      "file": "public/art/illustrations/social-record-extract.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"social record extract\" — part or all of a social record extracted for the purpose of communication. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "state",
+      "label": "state",
+      "file": "public/art/illustrations/state.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"state\". Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "stative",
+      "label": "stative",
+      "file": "public/art/illustrations/stative.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"stative\" — a state or condition. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "subject-of-care",
+      "label": "subject of care",
+      "file": "public/art/illustrations/subject-of-care.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"subject of care\" — person seeking to receive, receiving, or having received care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "subject-of-care-desire",
+      "label": "subject of care desire",
+      "file": "public/art/illustrations/subject-of-care-desire.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"subject of care desire\" — desire expressed by the subject of care or the subject of care proxy regarding the performance of certain care activities. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "subject-of-care-preference-delay",
+      "label": "subject of care preference delay",
+      "file": "public/art/illustrations/subject-of-care-preference-delay.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"subject of care preference delay\" — care activity delay by the preference of the subject of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "subject-of-care-proxy",
+      "label": "subject of care proxy",
+      "file": "public/art/illustrations/subject-of-care-proxy.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"subject of care proxy\" — care actor exercising a proxy mandate. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "summarized-care-information-repository",
+      "label": "summarized care information repository",
+      "file": "public/art/illustrations/summarized-care-information-repository.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"summarized care information repository\" — data repository containing summarized information for care coordination and the continuity of care. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "target-condition",
+      "label": "target condition",
+      "file": "public/art/illustrations/target-condition.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"target condition\" — potential health condition representing either health objectives or care goals. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "third-party-care-performer",
+      "label": "third party care performer",
+      "file": "public/art/illustrations/third-party-care-performer.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"third party care performer\" — role performed by a care third party. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "time-interval",
+      "label": "time interval",
+      "file": "public/art/illustrations/time-interval.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"time interval\". Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "unintended-event",
+      "label": "unintended event",
+      "file": "public/art/illustrations/unintended-event.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"unintended event\" — phenomenon that is not part of the normal course of a process. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "vulnerability",
+      "label": "vulnerability",
+      "file": "public/art/illustrations/vulnerability.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"vulnerability\" — health condition that is an exposure to the risk of harm. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    },
+    {
+      "slug": "working-diagnosis",
+      "label": "working diagnosis",
+      "file": "public/art/illustrations/working-diagnosis.jpg",
+      "prompt": "Flat mid-century illustration for a 1960s NHS public-information poster about \"working diagnosis\" — considered condition that one or more care professionals have determined to be the most consistent with observed conditions. Calm sage green, NHS blue (#005EB8) and muted ochre palette; simple bold geometric shapes with paper-print texture; no text or lettering; clean off-white background; square composition."
+    }
+  ]
+}
