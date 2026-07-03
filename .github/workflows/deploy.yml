@@ -41,3 +41,8 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+      # Pages intermittently answers "Deployment failed, try again later";
+      # a second attempt has always landed it
+      - if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
