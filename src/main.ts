@@ -53,21 +53,34 @@ async function boot() {
     .then((list) => (list ? new Set<string>(list.map((e: { slug: string }) => e.slug)) : null))
     .catch(() => null);
 
+  // phone-tier devices get reduced GPU load: WebKit kills pages that stall
+  // or overrun memory ("A problem repeatedly occurred" on iPhone)
+  const phone = navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) <= 500;
+
   // --- scene ---------------------------------------------------------------
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x22262b);
   // depth haze: long views fade out, and the far plane culls most of the
-  // 1.2 km street (the difference between 7 fps and 60 on the spine vista)
-  scene.fog = new THREE.Fog(0x22262b, 55, 150);
+  // street (the difference between 7 fps and 60 on the spine vista)
+  scene.fog = phone ? new THREE.Fog(0x22262b, 42, 120) : new THREE.Fog(0x22262b, 55, 150);
   scene.add(new THREE.HemisphereLight(0xffffff, 0xb9bec2, 1.0));
   scene.add(new THREE.AmbientLight(0xffffff, 0.38));
   const sun = new THREE.DirectionalLight(0xffffff, 0.4);
   sun.position.set(3, 8, 2);
   scene.add(sun);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  let renderer: THREE.WebGLRenderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: !phone });
+  } catch {
+    throw new Error(
+      '3D graphics (WebGL) could not start in this browser. On iPhone/iPad, ' +
+        'Lockdown Mode blocks WebGL — allow this site under Settings → Privacy ' +
+        '& Security → Lockdown Mode → Configure Web Browsing, or try another device.'
+    );
+  }
   renderer.setSize(innerWidth, innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.5 : 2));
   // without touch-action:none the browser claims touch drags for scrolling
   // and cancels our pointer events — drag-to-look would never fire
   renderer.domElement.style.touchAction = 'none';
@@ -116,6 +129,24 @@ async function boot() {
   player.setWalkables(allWalkables);
   player.teleport(atrium.spawnPos, atrium.spawnYaw);
   scene.add(player.camera);
+  if (phone) {
+    player.camera.far = 130;
+    player.camera.updateProjectionMatrix();
+  }
+
+  // Only areas near the player render (fog hides the cutoff). This also
+  // spreads GPU uploads across the walk instead of one giant first frame —
+  // a single multi-second stall is what gets a page killed on iPhone.
+  const VIS_RANGE = phone ? 140 : 175;
+  function updateVisibility() {
+    const p = player.position;
+    for (const a of areas.values()) {
+      let d = Infinity;
+      for (const b of a.boxes) d = Math.min(d, b.distanceToPoint(p));
+      a.group.visible = d < VIS_RANGE;
+    }
+  }
+  updateVisibility();
 
   let currentArea: BuiltArea = atrium;
   function setArea(area: BuiltArea) {
@@ -474,7 +505,8 @@ async function boot() {
     signTimer += dt;
     if (signTimer > 0.4) {
       signTimer = 0;
-      signs.update(player.position);
+      signs.update(player.position, phone ? 40 : 55, phone ? 100 : 120, phone ? 5 : 8);
+      updateVisibility();
     }
     const t1 = performance.now();
     renderer.render(scene, player.camera);
