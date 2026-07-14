@@ -19,6 +19,7 @@ import { wingColor } from './colors';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MATS as MAT, mergeBoxMesh, scaleBoxUV, TRIM, type BoxSpec } from './materials';
 import { MAT_PEOPLE, seatedPersonGeometry, standingPersonGeometry, personRng } from './people';
+import { LiftDoors } from './lifts';
 import { G, slug, type Layout } from '../../tools/lib/layout.mjs';
 
 export { MAT };
@@ -59,6 +60,8 @@ export interface BuiltArea {
   /** Arrival point inside the lift cab, when the area has one. */
   liftPos?: THREE.Vector3;
   liftYaw?: number;
+  /** Animated cab doors + where they are (world), for proximity opening. */
+  lift?: { doors: LiftDoors; doorwayPos: THREE.Vector3 };
   /** How many note/example notices were hung (content audit). */
   notices?: number;
   /** Tight boxes for "which area am I in" — tested against the FEET position. */
@@ -644,6 +647,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   const hasLift = wc.supers.length > 0 || wc.subs.length > 0;
   let liftPos: THREE.Vector3 | undefined;
   let liftYaw: number | undefined;
+  let lift: BuiltArea['lift'];
   if (hasLift) {
     const cx0 = 2.0;
     const cx1 = 3.42;
@@ -660,6 +664,67 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     kit.box(cx1 - cx0, cabH, 0.08, MAT.liftDoor, ccx, cabH / 2, cz1 - 0.04); // north
     kit.box(cx1 - cx0, 0.06, cz1 - cz0, MAT.liftDoor, ccx, cabH + 0.03, ccz, {}); // cab ceiling
     kit.led(ccx, ccz, cabH - 0.02, 0.5, 0.5);
+
+    // ---- lift realism: sliding doors + furniture ----------------------------
+    lift = { doors: new LiftDoors(group, cx0 + 0.1, 5.65), doorwayPos: kit.local(cx0 + 0.05, 0, 5.65) };
+    // stainless architrave: jambs, header strip, threshold plate
+    kit.steelSpec({ w: 0.06, h: 2.12, d: 0.09, x: cx0 - 0.01, y: 1.06, z: 5.12 });
+    kit.steelSpec({ w: 0.06, h: 2.12, d: 0.09, x: cx0 - 0.01, y: 1.06, z: 6.18 });
+    kit.steelSpec({ w: 0.06, h: 0.09, d: 1.15, x: cx0 - 0.01, y: 2.14, z: 5.65 });
+    kit.steelSpec({ w: 0.16, h: 0.02, d: 1.05, x: cx0 + 0.02, y: 0.012, z: 5.65 });
+    // call plate on the lobby side, south of the doorway
+    kit.steelSpec({ w: 0.03, h: 0.26, d: 0.16, x: cx0 - 0.015, y: 1.12, z: 4.99 });
+    kit.sign(
+      0.1, 0.2, cx0 - 0.035, 1.12, 4.99, -Math.PI / 2,
+      () => makeSignTexture({ widthPx: 64, heightPx: 128, title: '▲', subtitle: '▼', titleSize: 40, align: 'center' }),
+      `liftcall:${wc.label}`
+    );
+    // "LIFT" indicator on the header, showing this floor
+    kit.sign(
+      0.72, 0.24, cx0 - 0.015, 2.27, 5.65, -Math.PI / 2,
+      () =>
+        makeSignTexture({
+          widthPx: 384,
+          heightPx: 128,
+          title: 'LIFT',
+          subtitle: wc.floor ? `level −${wc.floor}` : 'ground',
+          titleSize: 56,
+          align: 'center',
+        }),
+      `liftind:${wc.label}`
+    );
+    // interior: handrail on three sides, load plate, period no-smoking sign
+    kit.steelSpec({ w: 1.24, h: 0.05, d: 0.04, x: ccx + 0.04, y: 0.92, z: cz0 + 0.13 });
+    kit.steelSpec({ w: 1.24, h: 0.05, d: 0.04, x: ccx + 0.04, y: 0.92, z: cz1 - 0.13 });
+    kit.steelSpec({ w: 0.04, h: 0.05, d: 1.44, x: cx1 - 0.13, y: 0.92, z: ccz });
+    kit.sign(
+      0.42, 0.15, ccx + 0.35, 1.78, cz0 + 0.09, 0,
+      () =>
+        makeSignTexture({
+          widthPx: 336,
+          heightPx: 120,
+          title: 'MAX 8 PERSONS · 610 kg',
+          titleSize: 30,
+          align: 'center',
+          background: '#e8e9e4',
+          color: '#3a4046',
+        }),
+      `liftload:${wc.label}`
+    );
+    kit.sign(
+      0.4, 0.14, ccx - 0.2, 1.78, cz1 - 0.09, Math.PI,
+      () =>
+        makeSignTexture({
+          widthPx: 320,
+          heightPx: 112,
+          title: 'NO SMOKING',
+          titleSize: 40,
+          align: 'center',
+          background: '#f4f4f1',
+          color: '#b3261e',
+        }),
+      `liftsmoke:${wc.label}`
+    );
     // button panel inside, on the south cab wall
     kit.sign(
       0.42, 0.6, ccx + 0.35, 1.35, cz0 + 0.09, 0,
@@ -840,6 +905,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     spawnYaw: flipYaw,
     liftPos,
     liftYaw,
+    lift,
     notices,
     boxes,
   };

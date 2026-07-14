@@ -210,6 +210,50 @@ async function boot() {
   }
   setArea(atrium);
 
+  // --- lift doors + arrival chime ---------------------------------------------
+  let liftTransit = false;
+  function updateLiftDoors(dt: number) {
+    const l = currentArea.lift;
+    if (!l) return;
+    if (!liftTransit) {
+      l.doors.target = player.floorPosition.distanceTo(l.doorwayPos) < 2.1 ? 1 : 0;
+    }
+    l.doors.update(dt);
+  }
+
+  let audio: AudioContext | null = null;
+  const ensureAudio = () => {
+    if (!audio) {
+      try {
+        audio = new AudioContext();
+      } catch {
+        /* no audio available */
+      }
+    }
+  };
+  addEventListener('pointerdown', ensureAudio, { once: true });
+  addEventListener('keydown', ensureAudio, { once: true });
+  /** A soft two-tone lift chime, synthesized — no assets needed. */
+  function ding() {
+    if (!audio) return;
+    const t = audio.currentTime + 0.05;
+    for (const [freq, at] of [
+      [1318.5, 0],
+      [1046.5, 0.14],
+    ] as const) {
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t + at);
+      g.gain.linearRampToValueAtTime(0.045, t + at + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + at + 0.55);
+      o.connect(g).connect(audio.destination);
+      o.start(t + at);
+      o.stop(t + at + 0.6);
+    }
+  }
+
   const volume = (b: THREE.Box3) =>
     (b.max.x - b.min.x) * (b.max.y - b.min.y) * (b.max.z - b.min.z);
   function areaAt(pos: THREE.Vector3): BuiltArea | undefined {
@@ -316,15 +360,32 @@ async function boot() {
       onPick: (id) =>
         done(() => {
           const dest = areas.get(id);
-          if (dest?.liftPos) {
-            // ride the lift: arrive inside the destination cab
-            player.teleport(dest.liftPos, dest.liftYaw ?? 0);
-            setArea(dest);
-            flashFade();
-            toast(`Lift → ${dest.label}`);
-            lastTravelAt = performance.now();
+          const src = areas.get(it.areaId);
+          const go = () => {
+            if (dest?.liftPos) {
+              // ride the lift: arrive inside the destination cab
+              player.teleport(dest.liftPos, dest.liftYaw ?? 0);
+              setArea(dest);
+              insideTriggers = triggersAt(player.floorPosition);
+              flashFade();
+              toast(`Lift → ${dest.label}`);
+              lastTravelAt = performance.now();
+              ding();
+            } else {
+              travelToArea(id, `Lift → ${dest?.label}`);
+            }
+          };
+          if (src?.lift) {
+            // the doors close before the car moves — as they should
+            liftTransit = true;
+            src.lift.doors.target = 0;
+            setTimeout(() => {
+              liftTransit = false;
+              if (player.floorPosition.distanceTo(src.lift!.doorwayPos) < 1.7) go();
+              else toast('The lift left without you');
+            }, 650);
           } else {
-            travelToArea(id, `Lift → ${dest?.label}`);
+            go();
           }
         }),
       onClose: () => done(),
@@ -448,6 +509,12 @@ async function boot() {
   // step out and back in — walking through a door can't ping-pong you back.
   let insideTriggers = new Set<Interactable>();
   function checkInteractions() {
+    if (liftTransit) {
+      // boarding: doors are closing, nothing else should fire or prompt
+      activePrompt = null;
+      promptEl.style.opacity = '0';
+      return;
+    }
     const now = performance.now();
     const nowInside = triggersAt(player.floorPosition);
     let nearestPrompt: Interactable | null = null;
@@ -550,6 +617,7 @@ async function boot() {
     const t0 = performance.now();
     const dt = Math.min(clock.getDelta(), 0.05);
     if (!isMenuOpen()) player.update(dt);
+    updateLiftDoors(dt);
     for (const entry of walkers) {
       const vis = entry.owner.group.visible;
       entry.w.group.visible = vis;
@@ -683,6 +751,11 @@ async function boot() {
     /** Advance walkers manually (testing without an animation loop). */
     tickPeople(dt = 0.1, steps = 1) {
       for (let i = 0; i < steps; i++) for (const e of walkers) e.w.update(dt);
+    },
+    /** Advance the current area's lift doors manually (testing). */
+    tickDoors(dt = 0.1, steps = 1) {
+      for (let i = 0; i < steps; i++) updateLiftDoors(dt);
+      return currentArea.lift ? +currentArea.lift.doors.openness.toFixed(2) : null;
     },
     /** Synchronous frame timing (N renders) — immune to rAF throttling. */
     bench(n = 30) {
