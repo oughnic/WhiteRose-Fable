@@ -297,9 +297,34 @@ async function boot() {
 
   // --- travel ------------------------------------------------------------------
   let lastTravelAt = 0;
+
+  // every teleport records its departure point; B / ↩ unwinds the trail
+  const history: { x: number; y: number; z: number; yaw: number; areaId: string }[] = [];
+  function recordDeparture() {
+    const p = player.floorPosition;
+    history.push({ x: p.x, y: p.y, z: p.z, yaw: player.camera.rotation.y, areaId: currentArea.id });
+    if (history.length > 60) history.shift();
+  }
+  function goBack() {
+    if (isMenuOpen() || readerOpen || liftTransit) return;
+    const h = history.pop();
+    if (!h) {
+      toast('No earlier stop to go back to');
+      return;
+    }
+    const area = areas.get(h.areaId);
+    player.teleport({ x: h.x, y: h.y, z: h.z }, h.yaw);
+    if (area) setArea(area);
+    insideTriggers = triggersAt(player.floorPosition);
+    flashFade();
+    toast(`Back → ${area?.label ?? 'previous stop'}`);
+    lastTravelAt = performance.now();
+  }
+
   function travelToArea(id: string, note?: string) {
     const dest = areas.get(id);
     if (!dest) return;
+    recordDeparture();
     player.teleport(dest.spawnPos, dest.spawnYaw);
     setArea(dest);
     insideTriggers = triggersAt(player.floorPosition); // arrive disarmed
@@ -308,10 +333,29 @@ async function boot() {
     lastTravelAt = performance.now();
   }
 
+  /** Arrive by lift: inside the destination cab where possible, with the chime. */
+  function rideLiftTo(id: string) {
+    const dest = areas.get(id);
+    if (!dest) return;
+    if (dest.liftPos) {
+      recordDeparture();
+      player.teleport(dest.liftPos, dest.liftYaw ?? 0);
+      setArea(dest);
+      insideTriggers = triggersAt(player.floorPosition);
+      flashFade();
+      toast(`Lift → ${dest.label}`);
+      lastTravelAt = performance.now();
+      ding();
+    } else {
+      travelToArea(id, `Lift → ${dest.label}`);
+    }
+  }
+
   function passDoor(it: Interactable) {
     const destId = it.targetIds[0];
     const dest = areas.get(destId);
     if (!dest) return;
+    recordDeparture();
     if (it.kind === 'door-self') {
       player.teleport(dest.spawnPos, dest.spawnYaw);
       toast(`${it.label} — back where you started (a pig's ear)`);
@@ -359,33 +403,18 @@ async function boot() {
     showMenu('Lift', wc?.label ?? '', items, {
       onPick: (id) =>
         done(() => {
-          const dest = areas.get(id);
           const src = areas.get(it.areaId);
-          const go = () => {
-            if (dest?.liftPos) {
-              // ride the lift: arrive inside the destination cab
-              player.teleport(dest.liftPos, dest.liftYaw ?? 0);
-              setArea(dest);
-              insideTriggers = triggersAt(player.floorPosition);
-              flashFade();
-              toast(`Lift → ${dest.label}`);
-              lastTravelAt = performance.now();
-              ding();
-            } else {
-              travelToArea(id, `Lift → ${dest?.label}`);
-            }
-          };
           if (src?.lift) {
             // the doors close before the car moves — as they should
             liftTransit = true;
             src.lift.doors.target = 0;
             setTimeout(() => {
               liftTransit = false;
-              if (player.floorPosition.distanceTo(src.lift!.doorwayPos) < 1.7) go();
+              if (player.floorPosition.distanceTo(src.lift!.doorwayPos) < 1.7) rideLiftTo(id);
               else toast('The lift left without you');
             }, 650);
           } else {
-            go();
+            rideLiftTo(id);
           }
         }),
       onClose: () => done(),
@@ -538,6 +567,49 @@ async function boot() {
     promptEl.style.opacity = nearestPrompt ? '1' : '0';
   }
 
+  // --- interactive lift boards: look/point at a row and click or tap ----------
+  const raycaster = new THREE.Raycaster();
+  const boardNdc = new THREE.Vector2();
+  function boardCellAt(nx: number, ny: number): { id: string; label: string } | null {
+    const boards = currentArea.boards;
+    if (!boards?.length) return null;
+    boardNdc.set(nx, ny);
+    raycaster.setFromCamera(boardNdc, player.camera);
+    for (const b of boards) {
+      const hit = raycaster.intersectObject(b.mesh, false)[0];
+      if (!hit?.uv || hit.distance > 4.2) continue;
+      for (const c of b.cells) {
+        const [u0, v0, u1, v1] = c.rect;
+        if (hit.uv.x >= u0 && hit.uv.x <= u1 && hit.uv.y >= v0 && hit.uv.y <= v1) return c;
+      }
+    }
+    return null;
+  }
+  function tryBoardPick(nx: number, ny: number): boolean {
+    if (liftTransit || isMenuOpen() || readerOpen) return false;
+    if (performance.now() - lastTravelAt < 400) return false; // tap+click double-fire guard
+    const cell = boardCellAt(nx, ny);
+    if (!cell) return false;
+    rideLiftTo(cell.id);
+    return true;
+  }
+  renderer.domElement.addEventListener('click', () => {
+    if (player.controls.isLocked) tryBoardPick(0, 0); // crosshair pick
+  });
+  let tapX = 0;
+  let tapY = 0;
+  let tapAt = 0;
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    tapX = e.clientX;
+    tapY = e.clientY;
+    tapAt = performance.now();
+  });
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    if (player.controls.isLocked) return;
+    if (Math.hypot(e.clientX - tapX, e.clientY - tapY) > 8 || performance.now() - tapAt > 600) return;
+    tryBoardPick((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  });
+
   addEventListener('keydown', (e) => {
     if (readerOpen) {
       if (e.code === 'Escape' || e.code === 'KeyR') closeReader();
@@ -547,6 +619,7 @@ async function boot() {
     if (e.code === 'KeyE') interact();
     if (e.code === 'KeyR') openReader();
     if (e.code === 'KeyM') openSearch();
+    if (e.code === 'KeyB') goBack();
     if (e.code === 'KeyF') {
       if (player.dash(12) > 0.3) flashFade();
     }
@@ -604,6 +677,7 @@ async function boot() {
     document.getElementById('btn-dash')!.addEventListener('click', () => {
       if (!isMenuOpen() && !readerOpen && player.dash(12) > 0.3) flashFade();
     });
+    document.getElementById('btn-back')!.addEventListener('click', goBack);
   }
 
   // --- loop -------------------------------------------------------------------
@@ -626,6 +700,14 @@ async function boot() {
     const here = areaAt(player.floorPosition);
     if (here && here !== currentArea) setArea(here);
     checkInteractions();
+    // aiming the crosshair at a destination row overrides the prompt
+    if (player.controls.isLocked && !liftTransit && !isMenuOpen()) {
+      const cell = boardCellAt(0, 0);
+      if (cell) {
+        promptEl.textContent = `Click — lift to ${cell.label}`;
+        promptEl.style.opacity = '1';
+      }
+    }
     signTimer += dt;
     if (signTimer > 0.4) {
       signTimer = 0;

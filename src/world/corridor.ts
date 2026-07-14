@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { World, WorldClass } from '../types';
 import {
   makeBoardTexture,
+  boardCellRects,
   makeSignTexture,
   makeLazySign,
   makeNoticeTexture,
@@ -23,6 +24,9 @@ import { LiftDoors } from './lifts';
 import { G, slug, type Layout } from '../../tools/lib/layout.mjs';
 
 export { MAT };
+
+/** The reception atrium's area id (lives here so the lift boards can target it). */
+export const ATRIUM_ID = '__atrium';
 
 export type InteractKind = 'door-out' | 'door-in' | 'door-self' | 'stair-up' | 'stair-down' | 'lift';
 
@@ -62,6 +66,8 @@ export interface BuiltArea {
   liftYaw?: number;
   /** Animated cab doors + where they are (world), for proximity opening. */
   lift?: { doors: LiftDoors; doorwayPos: THREE.Vector3 };
+  /** In-world boards you can click/tap: UV cells resolve to destinations. */
+  boards?: { mesh: THREE.Mesh; cells: { rect: [number, number, number, number]; id: string; label: string }[] }[];
   /** How many note/example notices were hung (content audit). */
   notices?: number;
   /** Tight boxes for "which area am I in" — tested against the FEET position. */
@@ -752,37 +758,52 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       prompt: 'E — Lift: select destination',
     });
   }
-  // lift/exit destination board (also the "you are here" board)
-  kit.sign(
+  // lift/exit destination board — rows computed eagerly so the same data
+  // paints the texture AND defines the tappable cells on the mesh
+  const boardRows: BoardRow[] = [];
+  const boardDests: (string | null)[] = [];
+  {
+    const anc = ancestorLevels(wc, byId);
+    const maxLevel = anc.length ? Math.max(...anc.map((a) => a.level)) : 0;
+    for (let lv = maxLevel; lv >= 1; lv--) {
+      for (const a of anc.filter((x) => x.level === lv)) {
+        const c = byId.get(a.id);
+        boardRows.push({ text: `▲${lv} ${c?.label ?? '?'}`, chip: wingColor(c?.wing ?? '') });
+        boardDests.push(a.id);
+      }
+    }
+    boardRows.push({ text: `● ${wc.label}`, strong: true, chip: color });
+    boardDests.push(null); // you are here
+    for (const id of wc.subs) {
+      const c = byId.get(id);
+      boardRows.push({ text: `▼1 ${c?.label ?? '?'}`, chip: wingColor(c?.wing ?? '') });
+      boardDests.push(id);
+    }
+    boardRows.push({ text: '⌂ Reception' });
+    boardDests.push(ATRIUM_ID);
+  }
+  const boardSpec = {
+    widthPx: 850,
+    heightPx: 750,
+    title: hasLift ? 'Lift' : 'Exit',
+    subtitle: wc.label,
+    rows: boardRows,
+    rowSize: boardRows.length > 10 ? 30 : 38,
+    columns: boardRows.length > 10 ? 2 : 1,
+  };
+  const boardMesh = kit.sign(
     1.7, 1.5, LW / 2 - 0.09, 1.7, 3.1, -Math.PI / 2,
-    () => {
-      const rows: BoardRow[] = [];
-      const anc = ancestorLevels(wc, byId);
-      const maxLevel = anc.length ? Math.max(...anc.map((a) => a.level)) : 0;
-      for (let lv = maxLevel; lv >= 1; lv--) {
-        for (const a of anc.filter((x) => x.level === lv)) {
-          const c = byId.get(a.id);
-          rows.push({ text: `▲${lv} ${c?.label ?? '?'}`, chip: wingColor(c?.wing ?? '') });
-        }
-      }
-      rows.push({ text: `● ${wc.label}`, strong: true, chip: color });
-      for (const id of wc.subs) {
-        const c = byId.get(id);
-        rows.push({ text: `▼1 ${c?.label ?? '?'}`, chip: wingColor(c?.wing ?? '') });
-      }
-      rows.push({ text: '⌂ Reception' });
-      return makeBoardTexture({
-        widthPx: 850,
-        heightPx: 750,
-        title: hasLift ? 'Lift' : 'Exit',
-        subtitle: wc.label,
-        rows,
-        rowSize: rows.length > 10 ? 30 : 38,
-        columns: rows.length > 10 ? 2 : 1,
-      });
-    },
+    () => makeBoardTexture(boardSpec),
     `liftboard:${wc.label}`
   );
+  let boards: BuiltArea['boards'];
+  if (hasLift) {
+    const rects = boardCellRects(boardSpec, boardRows.length);
+    const cells = boardRows.flatMap((r, i) =>
+      rects[i] && boardDests[i] ? [{ rect: rects[i]!, id: boardDests[i]!, label: r.text.replace(/^[▲▼●⌂]\S* ?/u, '') }] : []
+    );
+    boards = [{ mesh: boardMesh, cells }];
+  }
 
   // ---- non-primary parents: portal stair doors on the left lobby wall --------
   wc.supers.slice(1).forEach((pid, i) => {
@@ -906,6 +927,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     liftPos,
     liftYaw,
     lift,
+    boards,
     notices,
     boxes,
   };

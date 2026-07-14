@@ -36,14 +36,17 @@ To use a newer model export: replace the file in `data/` (or pass a path:
 ## Controls
 
 Desktop: WASD move (Shift runs) · mouse look · **E** interact (lifts) ·
+**click a lift-board row** to travel there (crosshair when the mouse is
+captured, pointer otherwise) · **B** back to your last stop ·
 **F** jump ahead 12 m · **R** read the current area as accessible HTML ·
 **M** porter service (search & teleport) · Esc release cursor.
 
 Touch (phones, tablets and touch-screen PCs — works alongside the mouse):
 left thumb pad to walk (push to the edge to run) · **drag anywhere on the
-view to look around** · tap the blue prompt to use a lift · **⏩** jumps
-ahead · **ℹ** reads the area · **⌖** calls the porter. (Mouse users can
-drag-look too, without pointer lock.)
+view to look around** · tap the blue prompt to use a lift, or **tap a row
+on the lift board directly** · **↩** back · **⏩** jumps ahead · **ℹ** reads
+the area · **⌖** calls the porter. (Mouse users can drag-look too, without
+pointer lock.)
 
 Definitions are on the lobby poster the moment you arrive (auto-fitted, so
 even the longest is fully readable); ceiling-hung signs name each concept

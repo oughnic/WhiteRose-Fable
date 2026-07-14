@@ -274,46 +274,81 @@ export interface BoardSpec {
   background?: string;
 }
 
+/** Shared board geometry — the painter and the clickable cells must agree. */
+function boardMetrics(spec: BoardSpec) {
+  const pad = Math.round(spec.widthPx * 0.035);
+  const titleSize = Math.round(spec.heightPx * 0.075);
+  let top = pad + titleSize * 1.25;
+  if (spec.subtitle) top += titleSize * 0.8;
+  top += pad * 0.4; // gap before the rule
+  const ruleY = top;
+  top += pad * 0.6;
+  const columns = spec.columns ?? 1;
+  const colWidth = (spec.widthPx - pad * 2 - pad * (columns - 1)) / columns;
+  const rowSize = spec.rowSize ?? Math.round(titleSize * 0.62);
+  const rowH = rowSize * 1.55;
+  const rowsPerCol = Math.max(1, Math.floor((spec.heightPx - top - pad) / rowH));
+  return { pad, titleSize, top, ruleY, columns, colWidth, rowSize, rowH, rowsPerCol };
+}
+
+/**
+ * UV rectangles [u0, v0, u1, v1] for each row (null when a row overflows the
+ * board) — lets a raycast hit on the mesh resolve to the row under the pointer.
+ */
+export function boardCellRects(spec: BoardSpec, count: number): ([number, number, number, number] | null)[] {
+  const m = boardMetrics(spec);
+  const rects: ([number, number, number, number] | null)[] = [];
+  for (let i = 0; i < count; i++) {
+    const col = Math.floor(i / m.rowsPerCol);
+    if (col >= m.columns) {
+      rects.push(null);
+      continue;
+    }
+    const rx = m.pad + col * (m.colWidth + m.pad);
+    const ry = m.top + (i % m.rowsPerCol) * m.rowH;
+    rects.push([rx / spec.widthPx, 1 - (ry + m.rowH) / spec.heightPx, (rx + m.colWidth) / spec.widthPx, 1 - ry / spec.heightPx]);
+  }
+  return rects;
+}
+
 /** A list board: title + rows laid out in columns (directory, lift board, stair signs). */
 export function makeBoardTexture(spec: BoardSpec): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = spec.widthPx;
   canvas.height = spec.heightPx;
   const ctx = canvas.getContext('2d')!;
-  const pad = Math.round(spec.widthPx * 0.035);
+  const m = boardMetrics(spec);
+  const pad = m.pad;
 
   ctx.fillStyle = spec.background ?? NHS_BLUE;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.textBaseline = 'top';
   ctx.textAlign = 'left';
 
-  const titleSize = Math.round(spec.heightPx * 0.075);
+  const titleSize = m.titleSize;
   ctx.fillStyle = '#ffffff';
   ctx.font = `bold ${titleSize}px Arial`;
   ctx.fillText(truncate(ctx, spec.title, spec.widthPx - pad * 2), pad, pad);
-  let top = pad + titleSize * 1.25;
 
   if (spec.subtitle) {
     ctx.font = `${Math.round(titleSize * 0.55)}px Arial`;
     ctx.globalAlpha = 0.85;
-    ctx.fillText(truncate(ctx, spec.subtitle, spec.widthPx - pad * 2), pad, top);
+    ctx.fillText(truncate(ctx, spec.subtitle, spec.widthPx - pad * 2), pad, pad + titleSize * 1.25);
     ctx.globalAlpha = 1;
-    top += titleSize * 0.8;
   }
-  top += pad * 0.4;
   ctx.strokeStyle = 'rgba(255,255,255,0.5)';
   ctx.lineWidth = Math.max(2, spec.heightPx * 0.004);
   ctx.beginPath();
-  ctx.moveTo(pad, top);
-  ctx.lineTo(spec.widthPx - pad, top);
+  ctx.moveTo(pad, m.ruleY);
+  ctx.lineTo(spec.widthPx - pad, m.ruleY);
   ctx.stroke();
-  top += pad * 0.6;
 
-  const columns = spec.columns ?? 1;
-  const colWidth = (spec.widthPx - pad * 2 - pad * (columns - 1)) / columns;
-  const rowSize = spec.rowSize ?? Math.round(titleSize * 0.62);
-  const rowH = rowSize * 1.55;
-  const rowsPerCol = Math.max(1, Math.floor((spec.heightPx - top - pad) / rowH));
+  const top = m.top;
+  const columns = m.columns;
+  const colWidth = m.colWidth;
+  const rowSize = m.rowSize;
+  const rowH = m.rowH;
+  const rowsPerCol = m.rowsPerCol;
 
   spec.rows.forEach((row, i) => {
     const col = Math.floor(i / rowsPerCol);

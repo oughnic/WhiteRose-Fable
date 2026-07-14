@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import type { World } from '../types';
 import { makeBoardTexture, makeSignTexture, SignManager, type ArtEntry } from './signage';
 import { wingColor } from './colors';
-import { AreaKit, MAT, hangPicture, type BuiltArea, type PeopleTier } from './corridor';
+import { AreaKit, MAT, hangPicture, ATRIUM_ID, type BuiltArea, type PeopleTier } from './corridor';
 import { G } from '../../tools/lib/layout.mjs';
 
-export const ATRIUM_ID = '__atrium';
+export { ATRIUM_ID };
 
 /**
  * The reception atrium at the west end of the hospital street.
