@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { World } from '../types';
 import { makeBoardTexture, makeSignTexture, SignManager, type ArtEntry } from './signage';
 import { wingColor } from './colors';
-import { AreaKit, MAT, hangPicture, type BuiltArea } from './corridor';
+import { AreaKit, MAT, hangPicture, type BuiltArea, type PeopleTier } from './corridor';
 import { G } from '../../tools/lib/layout.mjs';
 
 export const ATRIUM_ID = '__atrium';
@@ -12,7 +12,7 @@ export const ATRIUM_ID = '__atrium';
  * Hall spans x ∈ [−26, 0], z ∈ [3, 15]; the east wall opens onto the
  * street band (z ∈ [7, 11]) — a real doorway, not a portal.
  */
-export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[]): BuiltArea {
+export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], people: PeopleTier): BuiltArea {
   const group = new THREE.Group();
   group.name = 'area:atrium';
   const kit = new AreaKit(group, new THREE.Vector3(0, 0, 0), signs);
@@ -127,6 +127,13 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[]): 
     'directory-az'
   );
 
+  // the receptionist is on duty whenever there are people about
+  if (people !== 'off') {
+    kit.stand(X0 + 3.7, 0, cz, Math.PI / 2, 137); // behind the desk, facing the hall
+    kit.sit(-9.4, 0.02, 4.55, 1, 553); // waiting on a bench
+    kit.sit(-11.1, 0.02, 13.45, -1, 887);
+  }
+  kit.populate(people, 9001);
   kit.finalize();
 
   return {

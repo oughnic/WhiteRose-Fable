@@ -18,6 +18,7 @@ import {
 import { wingColor } from './colors';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MATS as MAT, mergeBoxMesh, scaleBoxUV, TRIM, type BoxSpec } from './materials';
+import { MAT_PEOPLE, seatedPersonGeometry, standingPersonGeometry, personRng } from './people';
 import { G, slug, type Layout } from '../../tools/lib/layout.mjs';
 
 export { MAT };
@@ -67,6 +68,9 @@ export interface BuiltArea {
 const mult = (min: number | null, max: number | null) =>
   min === null && max === null ? '' : `${min ?? 0}..${max === -1 ? '*' : (max ?? '*')}`;
 
+/** Activity tier: how many people populate the hospital. */
+export type PeopleTier = 'off' | 'low' | 'full';
+
 export interface BuildCtx {
   world: World;
   byId: Map<string, WorldClass>;
@@ -76,6 +80,8 @@ export interface BuildCtx {
   art: ArtEntry[];
   /** Slugs with a generated poster illustration in public/art/illustrations/. */
   illustrations: Set<string> | null;
+  /** How busily to populate the hospital with people. */
+  people: PeopleTier;
 }
 
 type TrimFace = 'x+' | 'x-' | 'z+' | 'z-';
@@ -165,11 +171,32 @@ export class AreaKit {
     this.plates.push(s);
   }
 
+  /** Chair positions, recorded so a share of them can be occupied. */
+  chairSpots: { x: number; y: number; z: number; face: 1 | -1 }[] = [];
+  private peopleGeos: THREE.BufferGeometry[] = [];
+
+  /** Seat a figure at (x, z) facing `face` (subject to the activity tier). */
+  sit(x: number, y: number, z: number, face: 1 | -1, seed: number) {
+    const g = seatedPersonGeometry(seed);
+    if (face === -1) g.rotateY(Math.PI);
+    g.translate(x, y, z);
+    this.peopleGeos.push(g);
+  }
+
+  /** A standing figure at (x, z) facing `yaw` (receptionists and the like). */
+  stand(x: number, y: number, z: number, yaw: number, seed: number) {
+    const g = standingPersonGeometry(seed);
+    g.rotateY(yaw);
+    g.translate(x, y, z);
+    this.peopleGeos.push(g);
+  }
+
   /**
    * A 1960s utility chair: tubular steel frame, vinyl seat and back.
    * face = +1 looks towards +z, −1 towards −z.
    */
   chair(x: number, yBase: number, z: number, face: 1 | -1 = 1) {
+    this.chairSpots.push({ x, y: yBase, z, face });
     const seatY = yBase + 0.45;
     this.seats.push({ w: 0.44, h: 0.06, d: 0.4, x, y: seatY, z });
     this.seats.push({ w: 0.44, h: 0.48, d: 0.05, x, y: seatY + 0.36, z: z - face * 0.19 });
@@ -209,6 +236,25 @@ export class AreaKit {
       y: yBottom + 1.05,
       z: alongX ? z + edge : fz,
     });
+  }
+
+  /** Occupy a share of the recorded chairs, then merge all figures into one mesh. */
+  populate(tier: PeopleTier, seedBase: number) {
+    if (tier !== 'off') {
+      const density = tier === 'full' ? 0.4 : 0.2;
+      const rnd = personRng(seedBase);
+      for (const s of this.chairSpots) {
+        if (rnd() < density) this.sit(s.x, s.y + 0.03, s.z, s.face, Math.floor(rnd() * 99991));
+      }
+    }
+    if (this.peopleGeos.length) {
+      const merged = mergeGeometries(this.peopleGeos);
+      this.peopleGeos.forEach((g) => g.dispose());
+      const mesh = new THREE.Mesh(merged, MAT_PEOPLE);
+      mesh.matrixAutoUpdate = false;
+      this.group.add(mesh);
+      this.peopleGeos = [];
+    }
   }
 
   /** Merge every batch — walls, floors, doors, trims, plates, glass, LEDs, seats. */
@@ -779,6 +825,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     );
   }
 
+  kit.populate(ctx.people, (wc.id.charCodeAt(0) * 131 + wc.id.charCodeAt(4) * 17 + wc.id.charCodeAt(8)) >>> 0);
   kit.finalize();
 
   return {

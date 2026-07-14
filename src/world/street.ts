@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { World } from './../types';
 import { makeSignTexture, SignManager, type ArtEntry } from './signage';
 import { wingColor } from './colors';
-import { AreaKit, MAT, hangPicture, type BuiltArea } from './corridor';
+import { AreaKit, MAT, hangPicture, type BuiltArea, type PeopleTier } from './corridor';
 import { G, type Layout } from '../../tools/lib/layout.mjs';
 
 export const STREET_ID = '__street';
@@ -12,7 +12,13 @@ export const STREET_ID = '__street';
  * running east from the atrium, with every wing's root lobby opening
  * directly off its south side. Classic 1960s finger-plan circulation.
  */
-export function buildStreet(world: World, layout: Layout, signs: SignManager, art: ArtEntry[]): BuiltArea {
+export function buildStreet(
+  world: World,
+  layout: Layout,
+  signs: SignManager,
+  art: ArtEntry[],
+  people: PeopleTier
+): BuiltArea {
   const group = new THREE.Group();
   group.name = 'area:street';
   const kit = new AreaKit(group, new THREE.Vector3(0, 0, 0), signs);
@@ -128,6 +134,7 @@ export function buildStreet(world: World, layout: Layout, signs: SignManager, ar
     'street-name'
   );
 
+  kit.populate(people, 4211);
   kit.finalize();
 
   return {

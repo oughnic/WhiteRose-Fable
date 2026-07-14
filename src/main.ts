@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { World } from './types';
-import { buildArea, ancestorLevels, type BuiltArea, type Interactable } from './world/corridor';
+import { buildArea, ancestorLevels, type BuiltArea, type Interactable, type PeopleTier } from './world/corridor';
+import { Walker, personRng } from './world/people';
 import { buildAtrium, ATRIUM_ID } from './world/atrium';
 import { buildStreet, STREET_ID } from './world/street';
 import { SignManager, type ArtEntry } from './world/signage';
@@ -57,6 +58,13 @@ async function boot() {
   // or overrun memory ("A problem repeatedly occurred" on iPhone)
   const phone = navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) <= 500;
 
+  // activity tier: how many people about — auto by platform, ?people= overrides,
+  // and prefers-reduced-motion keeps everyone seated
+  const peopleParam = new URLSearchParams(location.search).get('people');
+  const people: PeopleTier =
+    peopleParam === 'off' || peopleParam === 'low' || peopleParam === 'full' ? peopleParam : phone ? 'low' : 'full';
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // --- scene ---------------------------------------------------------------
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x22262b);
@@ -90,11 +98,11 @@ async function boot() {
   // --- build the whole hospital --------------------------------------------
   const signs = new SignManager();
   const areas = new Map<string, BuiltArea>();
-  const ctx = { world, byId, signs, layout, art, illustrations };
+  const ctx = { world, byId, signs, layout, art, illustrations, people };
 
-  const atrium = buildAtrium(world, signs, art);
+  const atrium = buildAtrium(world, signs, art, people);
   areas.set(atrium.id, atrium);
-  const street = buildStreet(world, layout, signs, art);
+  const street = buildStreet(world, layout, signs, art, people);
   areas.set(street.id, street);
   for (const wc of world.classes) {
     const p = layout.areas[wc.id];
@@ -137,6 +145,46 @@ async function boot() {
   // Only areas near the player render (fog hides the cutoff). This also
   // spreads GPU uploads across the walk instead of one giant first frame —
   // a single multi-second stall is what gets a page killed on iPhone.
+  // --- walking staff and visitors --------------------------------------------
+  const walkers: { w: Walker; owner: BuiltArea }[] = [];
+  if (people !== 'off' && !reducedMotion) {
+    const wRnd = personRng(20260703);
+    const addWalker = (owner: BuiltArea, a: THREE.Vector3, b: THREE.Vector3) => {
+      const w = new Walker(a, b, 1 + Math.floor(wRnd() * 99991));
+      scene.add(w.group);
+      walkers.push({ w, owner });
+    };
+    // porters and visitors pacing beats of the street
+    const nStreet = people === 'full' ? 7 : 3;
+    for (let i = 0; i < nStreet; i++) {
+      const x0 = 4 + ((layout.street.x1 - 70) * i) / Math.max(1, nStreet - 1);
+      addWalker(street, new THREE.Vector3(x0, 0, 9), new THREE.Vector3(Math.min(x0 + 55, layout.street.x1 - 4), 0, 9));
+    }
+    if (people === 'full') {
+      // a nurse on each sizeable landing
+      let n = 0;
+      for (const [pid, l] of Object.entries(layout.landings)) {
+        if (l.x1 - l.x0 < 18 || n >= 12) continue;
+        const owner = areas.get(pid);
+        if (!owner) continue;
+        addWalker(owner, new THREE.Vector3(l.x0 + 1.2, l.y, 8.5), new THREE.Vector3(l.x1 - 1.2, l.y, 8.5));
+        n++;
+      }
+      // the odd wanderer in the longer corridors
+      let c = 0;
+      for (const wc of world.classes) {
+        const p = layout.areas[wc.id];
+        if (p.corridorLen < 24 || c >= 8) continue;
+        const owner = areas.get(wc.id);
+        if (!owner) continue;
+        const z0 = p.flip ? 17.8 : -0.8;
+        const z1 = p.flip ? 17 + p.corridorLen - 2 : -(p.corridorLen - 2);
+        addWalker(owner, new THREE.Vector3(p.x, p.y, z0), new THREE.Vector3(p.x, p.y, z1));
+        c++;
+      }
+    }
+  }
+
   const VIS_RANGE = phone ? 140 : 175;
   function updateVisibility() {
     const p = player.position;
@@ -495,10 +543,18 @@ async function boot() {
   const clock = new THREE.Clock();
   let signTimer = 0;
   const frameMs = { logic: 0, render: 0 };
+  const bootAt = performance.now();
+  let frameAvg = 12;
+  let demoteStage = 0;
   renderer.setAnimationLoop(() => {
     const t0 = performance.now();
     const dt = Math.min(clock.getDelta(), 0.05);
     if (!isMenuOpen()) player.update(dt);
+    for (const entry of walkers) {
+      const vis = entry.owner.group.visible;
+      entry.w.group.visible = vis;
+      if (vis) entry.w.update(dt);
+    }
     const here = areaAt(player.floorPosition);
     if (here && here !== currentArea) setArea(here);
     checkInteractions();
@@ -507,11 +563,29 @@ async function boot() {
       signTimer = 0;
       signs.update(player.position, phone ? 40 : 55, phone ? 100 : 120, phone ? 5 : 8);
       updateVisibility();
+      // adaptive activity: if real frame work drags, thin the walkers out
+      // (uses measured work time, so a throttled background tab never demotes)
+      if (performance.now() - bootAt > 12000 && walkers.length) {
+        if (demoteStage === 0 && frameAvg > 26) {
+          demoteStage = 1;
+          for (let i = walkers.length - 1; i >= 0; i -= 2) {
+            scene.remove(walkers[i].w.group);
+            walkers.splice(i, 1);
+          }
+          toast('Trimmed ward activity to keep things smooth');
+        } else if (demoteStage === 1 && frameAvg > 30) {
+          demoteStage = 2;
+          for (const entry of walkers) scene.remove(entry.w.group);
+          walkers.length = 0;
+          toast('Paused ward activity for performance');
+        }
+      }
     }
     const t1 = performance.now();
     renderer.render(scene, player.camera);
     frameMs.logic = t1 - t0;
     frameMs.render = performance.now() - t1;
+    frameAvg = frameAvg * 0.96 + (frameMs.logic + frameMs.render) * 0.04;
   });
 
   addEventListener('resize', () => {
@@ -604,7 +678,18 @@ async function boot() {
     interactables: allInteractables,
     audit,
     openSearch,
-    perf: () => ({ ...frameMs, drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
+    perf: () => ({ ...frameMs, avg: +frameAvg.toFixed(1), drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
+    people: () => ({ tier: people, walkers: walkers.length, demoteStage }),
+    /** Advance walkers manually (testing without an animation loop). */
+    tickPeople(dt = 0.1, steps = 1) {
+      for (let i = 0; i < steps; i++) for (const e of walkers) e.w.update(dt);
+    },
+    /** Synchronous frame timing (N renders) — immune to rAF throttling. */
+    bench(n = 30) {
+      const t0 = performance.now();
+      for (let i = 0; i < n; i++) renderer.render(scene, player.camera);
+      return { msPerFrame: +((performance.now() - t0) / n).toFixed(2), drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles };
+    },
     currentArea: () => currentArea.label,
     goto(label: string) {
       const target =
