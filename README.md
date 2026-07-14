@@ -50,6 +50,17 @@ even the longest is fully readable); ceiling-hung signs name each concept
 from a distance; corridors end in a fire exit (or the concept's
 self-reference doors).
 
+## Activity
+
+The hospital is staffed: 1960s nurses, doctors, porters, sisters and
+patients sit in the waiting areas (one merged mesh per area — a single draw
+call) and walk the street, landings and longer corridors. Tiers adapt to
+the device: **full** on desktop (~27 walkers, 40% seating), **low** on
+phones (3 walkers, 20%), and `?people=off|low|full` in the URL overrides.
+`prefers-reduced-motion` keeps everyone seated, and if frame times sag the
+app thins the walkers out automatically. Measured cost at the full tier on
+the heaviest view: ≈4 ms and ~80 draw calls.
+
 ## Deploying
 
 `npm run build` produces a fully static `dist/` (~7 MB) — host it anywhere.
