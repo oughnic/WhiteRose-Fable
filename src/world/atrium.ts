@@ -58,7 +58,8 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
     kit.box(4.2, 0.5, 0.09, MAT.oak, -10, 0.7, bz + (bz < cz ? -0.24 : 0.24));
   }
   for (let i = 0; i < 5; i++) kit.chair(-5.8 + i * 0.62, 0, 14.35, -1);
-  for (let i = 0; i < 3; i++) kit.chair(-16.2 + i * 0.62, 0, 14.35, -1);
+  // west row sits under the wings directory, clear of the theatre doorway
+  for (let i = 0; i < 3; i++) kit.chair(-17.9 + i * 0.62, 0, 14.35, -1);
 
   // Yorkshire views flanking the title and beside the directory
   const pick = (s: number) => (art.length ? art[s % art.length] : null);
