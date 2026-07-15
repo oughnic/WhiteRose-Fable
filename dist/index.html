@@ -83,6 +83,11 @@
       body.touch #touch-ui {
         display: block;
       }
+      /* filming mode (H): a completely clean frame for recording */
+      body.filming #hud,
+      body.filming.touch #touch-ui {
+        display: none;
+      }
       #joy {
         position: fixed;
         left: 26px;
@@ -319,7 +324,7 @@
         z-index: 5;
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-B7qi4Oy1.js"></script>
+    <script type="module" crossorigin src="./assets/index-DtBc0CU_.js"></script>
   </head>
   <body>
     <div id="app"></div>
@@ -332,11 +337,13 @@
       <div id="crosshair"></div>
       <div id="toast"></div>
       <button id="prompt"></button>
-      <div id="hint">WASD move · mouse look · E interact · R read area · M porter (search) · Esc release cursor</div>
+      <div id="hint">WASD move · mouse look · E interact · click boards & the lecture screen · B back · F jump ahead · R read · M porter · H hide UI · Esc release cursor</div>
     </div>
     <div id="touch-ui">
       <div id="joy"><div id="joy-knob"></div></div>
       <div id="btns">
+        <button id="btn-back" title="Back to your last stop" aria-label="Back">↩</button>
+        <button id="btn-dash" title="Jump ahead" aria-label="Jump ahead">⏩</button>
         <button id="btn-read" title="Read this area" aria-label="Read this area">ℹ</button>
         <button id="btn-porter" title="Porter — search and travel" aria-label="Porter search">⌖</button>
       </div>

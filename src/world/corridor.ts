@@ -66,9 +66,10 @@ export interface BuiltArea {
   liftYaw?: number;
   /** Animated cab doors + where they are (world), for proximity opening. */
   lift?: { doors: LiftDoors; doorwayPos: THREE.Vector3 };
-  /** In-world boards you can click/tap: UV cells resolve to destinations. */
+  /** In-world boards you can click/tap: UV cells resolve to destinations
+   * ('screen' cells drive the lecture-theatre slide deck instead). */
   boards?: {
-    kind: 'lift' | 'directory';
+    kind: 'lift' | 'directory' | 'screen';
     mesh: THREE.Mesh;
     cells: { rect: [number, number, number, number]; id: string; label: string }[];
   }[];

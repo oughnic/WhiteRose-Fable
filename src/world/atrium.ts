@@ -3,6 +3,7 @@ import type { World } from '../types';
 import { makeBoardTexture, boardCellRects, makeSignTexture, SignManager, type ArtEntry } from './signage';
 import { wingColor } from './colors';
 import { AreaKit, MAT, hangPicture, ATRIUM_ID, type BuiltArea, type PeopleTier } from './corridor';
+import { THEATRE_ID } from './theatre';
 import { G } from '../../tools/lib/layout.mjs';
 
 export { ATRIUM_ID };
@@ -35,7 +36,11 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
   for (let mx = X0 + 2; mx < X1 - 0.5; mx += 2) {
     kit.steelSpec({ w: 0.07, h: 1.7, d: 0.18, x: mx, y: 1.85, z: Z0 - 0.075 });
   }
-  kit.box(X1 - X0 + 0.3, H, 0.15, MAT.wall, cx, H / 2, Z1 + 0.075, { solid: true, trim: ['z-'] }); // north
+  // north wall, with a 2 m opening at x = −15 to the Postgraduate Medical
+  // Centre link (segments sized to keep both directory boards fully backed)
+  kit.box(-16 - X0 + 0.3, H, 0.15, MAT.wall, (X0 - 0.15 + -16) / 2, H / 2, Z1 + 0.075, { solid: true, trim: ['z-'] });
+  kit.box(X1 - -14 + 0.3, H, 0.15, MAT.wall, (-14 + X1 + 0.15) / 2, H / 2, Z1 + 0.075, { solid: true, trim: ['z-'] });
+  kit.box(2, H - 2.3, 0.15, MAT.wall, -15, (H + 2.3) / 2, Z1 + 0.075, {}); // header over the link door
   kit.box(0.15, H, Z1 - Z0, MAT.wall, X0 - 0.075, H / 2, cz, { solid: true, trim: ['x+'] }); // west
   // east wall with the street opening (z ∈ [7, 11])
   kit.box(0.15, H, G.STREET_Z0 - Z0, MAT.wall, X1 + 0.075, H / 2, (Z0 + G.STREET_Z0) / 2, { solid: true, trim: ['x-'] });
@@ -90,21 +95,39 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
     'to-street'
   );
 
+  // sign over the north door to the lecture theatre
+  kit.sign(
+    2.6, 0.6, -15, 2.62, Z1 - 0.09, Math.PI,
+    () =>
+      makeSignTexture({
+        widthPx: 1152,
+        heightPx: 252,
+        title: 'Postgraduate Medical Centre →',
+        subtitle: 'lecture theatre · seminars & presentations',
+        titleSize: 70,
+      }),
+    'to-theatre'
+  );
+
   // directory boards on the north wall: wing summary + full A–Z, both tappable
+  const wingRows = [
+    ...world.wings.map((w) => ({
+      text: w.annex ? w.label : `${w.label} wing`,
+      sub: `${w.classCount} concepts`,
+      chip: wingColor(w.key),
+    })),
+    { text: 'Postgraduate Medical Centre', sub: 'lecture theatre', chip: '#005eb8' },
+  ];
   const wingSpec = {
     widthPx: 1024,
     heightPx: 724,
     title: 'Hospital directory',
     subtitle: 'wings west to east — tap one to visit its entrance',
-    rows: world.wings.map((w) => ({
-      text: w.annex ? w.label : `${w.label} wing`,
-      sub: `${w.classCount} concepts`,
-      chip: wingColor(w.key),
-    })),
-    rowSize: 44,
+    rows: wingRows,
+    rowSize: 40, // 8 rows fit (7 wings + the theatre); 44 held only 7
   };
   const wingMesh = kit.sign(3.4, 2.4, -20, 1.9, Z1 - 0.09, Math.PI, () => makeBoardTexture(wingSpec), 'directory-wings');
-  const wingRects = boardCellRects(wingSpec, world.wings.length);
+  const wingRects = boardCellRects(wingSpec, wingRows.length);
   const azSpec = {
     widthPx: 2048,
     heightPx: 1152,
@@ -124,9 +147,14 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
     {
       kind: 'directory',
       mesh: wingMesh,
-      cells: world.wings.flatMap((w, i) =>
-        wingRects[i] ? [{ rect: wingRects[i]!, id: w.rootIds[0], label: w.annex ? w.label : `${w.label} wing` }] : []
-      ),
+      cells: [
+        ...world.wings.flatMap((w, i) =>
+          wingRects[i] ? [{ rect: wingRects[i]!, id: w.rootIds[0], label: w.annex ? w.label : `${w.label} wing` }] : []
+        ),
+        ...(wingRects[world.wings.length]
+          ? [{ rect: wingRects[world.wings.length]!, id: THEATRE_ID, label: 'Postgraduate Medical Centre' }]
+          : []),
+      ],
     },
     {
       kind: 'directory',

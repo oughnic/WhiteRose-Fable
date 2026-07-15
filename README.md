@@ -53,6 +53,24 @@ even the longest is fully readable); ceiling-hung signs name each concept
 from a distance; corridors end in a fire exit (or the concept's
 self-reference doors).
 
+## Filming a presentation
+
+The **Postgraduate Medical Centre** (through Reception's north door, on the
+directory boards and the porter search) is a raked 1960s lecture theatre
+built as a video backdrop:
+
+- **Your slides**: export the deck as PNG/JPG (1920×1080 works best), copy
+  into `public/slides/`, and list them in order in
+  `public/slides/manifest.json` — `["01.png", "02.png"]`. Video clips
+  (`.mp4`, `.webm`) can be listed too and play on the screen. With no
+  manifest, a built-in instructional deck shows instead.
+- **Advancing**: ← / → or PageUp / PageDown (presenter clickers emit page
+  keys, so a real remote works), or tap the screen — right side next, left
+  side back.
+- **Clean recording**: **H** hides the entire interface; **L** dims the
+  house lights; `?start=theatre` in the URL begins at the lectern. The
+  people system seats a 1960s audience and puts a presenter at the lectern.
+
 ## Activity
 
 The hospital is staffed: 1960s nurses, doctors, porters, sisters and
@@ -119,6 +137,12 @@ just a commit.
       controls** (virtual joystick, drag-look, tappable prompts, ℹ/⌖ buttons,
       responsive HUD); one-command `npm run build` (pipeline + audits + bundle)
       and a GitHub Pages workflow
+- [x] **Stage 6 — Postgraduate Medical Centre**: a pavilion off Reception with
+      a raked lecture theatre (5 tiers, stage, lectern, seated audience) and a
+      6 m projection screen driven by `public/slides/` — arrow keys, presenter
+      clickers, or screen taps advance; **H** strips the UI for filming, **L**
+      dims the house lights, `?start=theatre` spawns at the lectern. Sited
+      inside the future Stage 7 courtyard (racetrack donut — see PLAN.md)
 - [ ] Optional remainder: **AI concept illustrations** beside posters — prompts
       ready (`npm run prompts`); generate images, write
       `public/art/illustrations/manifest.json`, done. Cross-browser and real

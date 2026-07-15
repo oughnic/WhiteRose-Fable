@@ -4,6 +4,8 @@ import { buildArea, ancestorLevels, type BuiltArea, type Interactable, type Peop
 import { Walker, personRng } from './world/people';
 import { buildAtrium, ATRIUM_ID } from './world/atrium';
 import { buildStreet, STREET_ID } from './world/street';
+import { buildTheatre, THEATRE_ID } from './world/theatre';
+import { SlideDeck } from './world/slides';
 import { SignManager, type ArtEntry } from './world/signage';
 import { wingColor } from './world/colors';
 import { Player } from './engine/player';
@@ -104,6 +106,10 @@ async function boot() {
   areas.set(atrium.id, atrium);
   const street = buildStreet(world, layout, signs, art, people);
   areas.set(street.id, street);
+  const theatre = buildTheatre(signs, art, people);
+  areas.set(theatre.id, theatre);
+  const deck = new SlideDeck(theatre.screen);
+  void deck.load();
   for (const wc of world.classes) {
     const p = layout.areas[wc.id];
     // north-row areas are rotated 180°; their origin sits at z=17 so the
@@ -209,6 +215,11 @@ async function boot() {
     signEl.style.borderLeft = `8px solid ${wc ? wingColor(wc.wing) : '#ffffff'}`;
   }
   setArea(atrium);
+  // ?start=theatre: begin at the lectern, ready to film
+  if (new URLSearchParams(location.search).get('start') === 'theatre') {
+    player.teleport(theatre.lecternPos, theatre.lecternYaw);
+    setArea(theatre);
+  }
 
   // --- lift doors + arrival chime ---------------------------------------------
   let liftTransit = false;
@@ -427,7 +438,10 @@ async function boot() {
     const items = [...world.classes]
       .sort((a, b) => a.label.localeCompare(b.label))
       .map((c) => itemFor(c.id));
-    items.unshift({ label: '⌂  Reception', sub: 'the atrium', value: ATRIUM_ID });
+    items.unshift(
+      { label: '⌂  Reception', sub: 'the atrium', value: ATRIUM_ID },
+      { label: '▤  Postgraduate Medical Centre', sub: 'lecture theatre', value: THEATRE_ID }
+    );
     showMenu('Porter service', 'where would you like to go?', items, {
       searchable: true,
       onPick: (id) => {
@@ -469,8 +483,17 @@ async function boot() {
     if (!wc) {
       html =
         currentArea.id === ATRIUM_ID
-          ? `<p>Reception for the ContSys Hospital — a walkable model of ${esc(world.meta.label)}. The hospital street runs east; every wing's entrance opens off it. Press M (or ⌖) for the porter.</p>`
-          : `<p>The hospital street: the ground-level spine connecting all wings. Root concepts open off the south side; courtyard windows line the north.</p>`;
+          ? `<p>Reception for the ContSys Hospital — a walkable model of ${esc(world.meta.label)}. The hospital street runs east; every wing's entrance opens off it. The Postgraduate Medical Centre (lecture theatre) is through the north door. Press M (or ⌖) for the porter.</p>`
+          : currentArea.id === THEATRE_ID
+            ? `<p>The Postgraduate Medical Centre: a raked lecture theatre for seminars and video presentations.</p>
+               <h3>Presenting</h3>
+               <ul><li>Slides advance with ← / → or PageUp / PageDown — presenter clickers work.</li>
+               <li>Tap or click the screen: right side next, left side back.</li>
+               <li><strong>H</strong> hides the whole interface for a clean recording; <strong>L</strong> dims the house lights.</li>
+               <li>Add <code>?start=theatre</code> to the address to begin at the lectern.</li></ul>
+               <h3>Your own deck</h3>
+               <p>Export slides as PNG/JPG (1920×1080), copy them into <code>slides/</code>, and list them in <code>slides/manifest.json</code> — video clips (.mp4) can be listed too.</p>`
+            : `<p>The hospital street: the ground-level spine connecting all wings. Root concepts open off the south side; courtyard windows line the north.</p>`;
     } else {
       html += `<p>${esc(wc.description ?? 'Definition pending.')}</p>`;
       const facts: string[] = [];
@@ -570,15 +593,17 @@ async function boot() {
   // --- interactive lift boards: look/point at a row and click or tap ----------
   const raycaster = new THREE.Raycaster();
   const boardNdc = new THREE.Vector2();
-  function boardCellAt(nx: number, ny: number): { id: string; label: string; kind: 'lift' | 'directory' } | null {
+  function boardCellAt(nx: number, ny: number): { id: string; label: string; kind: 'lift' | 'directory' | 'screen' } | null {
     const boards = currentArea.boards;
     if (!boards?.length) return null;
     player.camera.updateMatrixWorld(); // clicks can land between frames
     boardNdc.set(nx, ny);
     raycaster.setFromCamera(boardNdc, player.camera);
     for (const b of boards) {
+      b.mesh.updateWorldMatrix(true, false); // valid even before the first rendered frame
       const hit = raycaster.intersectObject(b.mesh, false)[0];
-      if (!hit?.uv || hit.distance > 4.2) continue;
+      // the theatre screen is pickable from anywhere in the hall
+      if (!hit?.uv || hit.distance > (b.kind === 'screen' ? 16 : 4.2)) continue;
       for (const c of b.cells) {
         const [u0, v0, u1, v1] = c.rect;
         if (hit.uv.x >= u0 && hit.uv.x <= u1 && hit.uv.y >= v0 && hit.uv.y <= v1) return { ...c, kind: b.kind };
@@ -591,7 +616,11 @@ async function boot() {
     if (performance.now() - lastTravelAt < 400) return false; // tap+click double-fire guard
     const cell = boardCellAt(nx, ny);
     if (!cell) return false;
-    if (cell.kind === 'lift') {
+    if (cell.kind === 'screen') {
+      if (cell.id === 'next') deck.next();
+      else deck.prev();
+      toast(deck.label);
+    } else if (cell.kind === 'lift') {
       // picking from inside the cab gets the doors-close ritual
       const src = currentArea;
       const inCab = src.liftPos && player.floorPosition.distanceTo(src.liftPos) < 1.2;
@@ -632,7 +661,32 @@ async function boot() {
     if (e.code === 'KeyF') {
       if (player.dash(12) > 0.3) flashFade();
     }
+    // filming: H strips every scrap of interface for a clean recording
+    if (e.code === 'KeyH') {
+      const on = document.body.classList.toggle('filming');
+      if (!on) toast('Interface restored');
+    }
+    if (currentArea.id === THEATRE_ID) {
+      // slide control — ArrowLeft/Right, plus PageUp/Down so presenter
+      // clickers (which emit page keys) work while filming
+      if (e.code === 'ArrowRight' || e.code === 'PageDown') {
+        e.preventDefault();
+        deck.next();
+        toast(deck.label);
+      }
+      if (e.code === 'ArrowLeft' || e.code === 'PageUp') {
+        e.preventDefault();
+        deck.prev();
+        toast(deck.label);
+      }
+      if (e.code === 'KeyL') {
+        houseLightsOn = !houseLightsOn;
+        theatre.setHouseLights(houseLightsOn);
+        toast(houseLightsOn ? 'House lights up' : 'House lights dimmed — L restores');
+      }
+    }
   });
+  let houseLightsOn = true;
   promptEl.addEventListener('click', interact);
 
   // --- touch + drag look ------------------------------------------------------
@@ -713,7 +767,10 @@ async function boot() {
     if (player.controls.isLocked && !liftTransit && !isMenuOpen()) {
       const cell = boardCellAt(0, 0);
       if (cell) {
-        promptEl.textContent = `Click — ${cell.kind === 'lift' ? 'lift to' : 'go to'} ${cell.label}`;
+        promptEl.textContent =
+          cell.kind === 'screen'
+            ? `Click — ${cell.label}`
+            : `Click — ${cell.kind === 'lift' ? 'lift to' : 'go to'} ${cell.label}`;
         promptEl.style.opacity = '1';
       }
     }
@@ -756,7 +813,7 @@ async function boot() {
   // --- audit + debug API -----------------------------------------------------
   function audit() {
     const expect = {
-      areas: world.classes.length + 2, // + atrium + street
+      areas: world.classes.length + 3, // + atrium + street + theatre
       doorOut: world.classes.reduce((n, c) => n + c.out.length, 0),
       doorIn: world.classes.reduce((n, c) => n + c.in.length, 0),
       doorSelf: world.classes.reduce((n, c) => n + c.self.length, 0),
@@ -791,6 +848,8 @@ async function boot() {
       adj.get(a)!.add(b);
     };
     link(ATRIUM_ID, STREET_ID);
+    link(ATRIUM_ID, THEATRE_ID); // the glazed link off Reception's north wall
+    link(THEATRE_ID, ATRIUM_ID);
     for (const w of layout.wings) for (const r of w.rootIds) { link(STREET_ID, r); link(r, STREET_ID); }
     for (const [pid, kids] of Object.entries(layout.homeChildren)) {
       for (const k of kids) { link(pid, k); link(k, pid); } // real stairwell + landing
@@ -855,13 +914,23 @@ async function boot() {
       return { msPerFrame: +((performance.now() - t0) / n).toFixed(2), drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles };
     },
     currentArea: () => currentArea.label,
+    /** Board picking internals (testing): what's under an NDC point, and a full pick. */
+    pick: (nx: number, ny: number) => boardCellAt(nx, ny),
+    tapPick: (nx: number, ny: number) => tryBoardPick(nx, ny),
+    /** Slide deck state + controls (testing). */
+    slides: () => ({ label: deck.label, total: deck.count }),
+    nextSlide: () => { deck.next(); return deck.label; },
+    prevSlide: () => { deck.prev(); return deck.label; },
+    houseLights: (on: boolean) => theatre.setHouseLights(on),
     goto(label: string) {
       const target =
         label === 'Reception'
           ? atrium
           : label === 'Hospital Street'
             ? street
-            : (byLabel.get(label) && areas.get(byLabel.get(label)!.id)) || null;
+            : label === 'Postgraduate Medical Centre'
+              ? theatre
+              : (byLabel.get(label) && areas.get(byLabel.get(label)!.id)) || null;
       if (!target) return `unknown area: ${label}`;
       travelToArea(target.id);
       return target.label;

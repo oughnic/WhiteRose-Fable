@@ -83,6 +83,11 @@
       body.touch #touch-ui {
         display: block;
       }
+      /* filming mode (H): a completely clean frame for recording */
+      body.filming #hud,
+      body.filming.touch #touch-ui {
+        display: none;
+      }
       #joy {
         position: fixed;
         left: 26px;
@@ -331,7 +336,7 @@
       <div id="crosshair"></div>
       <div id="toast"></div>
       <button id="prompt"></button>
-      <div id="hint">WASD move · mouse look · E interact · click lift-board rows · B back · F jump ahead · R read area · M porter · Esc release cursor</div>
+      <div id="hint">WASD move · mouse look · E interact · click boards & the lecture screen · B back · F jump ahead · R read · M porter · H hide UI · Esc release cursor</div>
     </div>
     <div id="touch-ui">
       <div id="joy"><div id="joy-knob"></div></div>
