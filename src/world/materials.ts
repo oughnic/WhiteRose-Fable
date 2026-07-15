@@ -117,6 +117,8 @@ export interface BoxSpec {
   x: number;
   y: number;
   z: number;
+  /** Optional rotation about x (radians) — sloping stair handrails. */
+  rx?: number;
 }
 
 /** Merge many boxes into a single mesh (one draw call) — trims, LED panels, plates. */
@@ -124,6 +126,7 @@ export function mergeBoxMesh(specs: BoxSpec[], material: THREE.Material): THREE.
   if (!specs.length) return null;
   const geos = specs.map((s) => {
     const g = new THREE.BoxGeometry(s.w, s.h, s.d);
+    if (s.rx) g.rotateX(s.rx);
     g.translate(s.x, s.y, s.z);
     return g;
   });

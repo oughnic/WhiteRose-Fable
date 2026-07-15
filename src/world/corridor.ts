@@ -1017,6 +1017,7 @@ function buildStairwellAndLanding(
   // ---- open timber banisters (period 1960s — no solid panels) --------------
   // Each run is an oak handrail with slim balusters; an invisible collider
   // over the same volume still keeps everyone out of the well.
+  const RAIL_Y = TRIM.railCentre; // 0.95 — matches the trolley rails
   const guard = (x0: number, z0: number, x1: number, z1: number, yBase: number) => {
     const alongX = Math.abs(x1 - x0) > Math.abs(z1 - z0);
     const len = alongX ? x1 - x0 : z1 - z0;
@@ -1025,23 +1026,23 @@ function buildStairwellAndLanding(
       h: 0.06,
       d: alongX ? 0.06 : len,
       x: (x0 + x1) / 2,
-      y: yBase + 0.87,
+      y: yBase + RAIL_Y,
       z: (z0 + z1) / 2,
     });
     for (let t = 0.15; t < len; t += 0.3) {
       kit.oakSpec({
         w: 0.035,
-        h: 0.84,
+        h: RAIL_Y - 0.03,
         d: 0.035,
         x: alongX ? x0 + t : x0,
-        y: yBase + 0.42,
+        y: yBase + (RAIL_Y - 0.03) / 2,
         z: alongX ? z0 : z0 + t,
       });
     }
     kit.colliders.push(
       new THREE.Box3().setFromPoints([
         kit.local(Math.min(x0, x1) - 0.05, yBase, Math.min(z0, z1) - 0.05),
-        kit.local(Math.max(x0, x1) + 0.05, yBase + 0.95, Math.max(z0, z1) + 0.05),
+        kit.local(Math.max(x0, x1) + 0.05, yBase + RAIL_Y + 0.05, Math.max(z0, z1) + 0.05),
       ])
     );
   };
@@ -1049,28 +1050,37 @@ function buildStairwellAndLanding(
   guard(G.PIT_X1 + 0.04, G.PIT_Z0, G.PIT_X1 + 0.04, G.PIT_Z1, 0);
   guard(G.PIT_X0, G.PIT_Z0 - 0.04, G.PIT_X1, G.PIT_Z0 - 0.04, 0);
   guard(G.PIT_X1 - laneW - 0.2, G.PIT_Z1 + 0.04, G.PIT_X1, G.PIT_Z1 + 0.04, 0); // entry stays open on the west lane
-  // centre well screen between the flights: stepped rails follow each flight
-  // down, tall balusters span the open well — light where the wall was solid
+  // centre well balustrade: continuous handrails at trolley-rail height,
+  // sloping at the pitch of the stairs — one following each flight down,
+  // meeting at the half landing, with vertical balusters onto the treads
   {
     const cx = (G.PIT_X0 + G.PIT_X1) / 2;
-    const segN = 6;
-    const segD = run / segN;
-    for (let k = 0; k < segN; k++) {
-      const zc = G.PIT_Z1 - (k + 0.5) * segD;
-      const f = (k + 0.5) / segN;
-      const yA = -(S / 2) * f + 0.87; // flight A handrail (upper)
-      const yB = -S + (S / 2) * f + 0.87; // flight B handrail (lower)
-      kit.oakSpec({ w: 0.07, h: 0.06, d: segD, x: cx, y: yA, z: zc });
-      kit.oakSpec({ w: 0.07, h: 0.06, d: segD, x: cx, y: yB, z: zc });
-      for (const bz of [zc - segD / 4, zc + segD / 4]) {
-        const bot = yB - 0.85;
-        kit.oakSpec({ w: 0.035, h: yA - bot, d: 0.035, x: cx, y: (yA + bot) / 2, z: bz });
+    const pitch = Math.atan2(S / 2, run);
+    const railLen = Math.hypot(run, S / 2) + 0.15;
+    const zTop = G.PIT_Z1; // lobby edge
+    const zBot = G.PIT_Z0 + HALF; // half landing
+    const zc = (zTop + zBot) / 2;
+    const yAt = (z: number) => RAIL_Y - (S / 2) * ((zTop - z) / run); // flight A rail line
+    const rail = (x: number, yMid: number, rx: number) =>
+      kit.oakSpec({ w: 0.07, h: 0.07, d: railLen, x, y: yMid, z: zc, rx });
+    // flight A (upper, descends south) + flight B (lower, descends north)
+    rail(cx, RAIL_Y - S / 4, -pitch);
+    rail(cx, RAIL_Y - (3 * S) / 4, pitch);
+    // wall-side handrails on each lane's outer wall, same pitch
+    rail(G.PIT_X0 + 0.08, RAIL_Y - S / 4, -pitch);
+    rail(G.PIT_X1 - 0.08, RAIL_Y - (3 * S) / 4, pitch);
+    // balusters: verticals from each centre rail down to its flight
+    // (flight B slopes the opposite way — its own rail line, not A's)
+    const yBAt = (z: number) => RAIL_Y - S + (S / 2) * ((zTop - z) / run);
+    for (let z = zBot + 0.15; z < zTop; z += 0.3) {
+      for (const railY of [yAt(z), yBAt(z)]) {
+        kit.oakSpec({ w: 0.035, h: RAIL_Y - 0.06, d: 0.035, x: cx, y: railY - 0.03 - (RAIL_Y - 0.06) / 2, z });
       }
     }
     kit.colliders.push(
       new THREE.Box3().setFromPoints([
         kit.local(cx - 0.06, -S, G.PIT_Z0 + 0.8),
-        kit.local(cx + 0.06, 0.9, G.PIT_Z1),
+        kit.local(cx + 0.06, 1.0, G.PIT_Z1),
       ])
     );
   }
