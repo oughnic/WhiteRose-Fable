@@ -1173,54 +1173,69 @@ function buildStairwellAndLanding(
     `landingup:${wc.label}`
   );
 
-  // portal doors on the north wall for subtypes homed in other wings —
-  // sliding east past any north-row lobby openings
-  let px = G.PIT_X1 + 1.6;
-  const dodgeNorth = (x: number): number => {
-    for (const [b0, b1] of northBands) if (x > b0 - 0.85 && x < b1 + 0.85) return b1 + 0.95;
-    return x;
-  };
+  // portal doors for subtypes homed in other wings: scan the north wall for
+  // a genuinely clear slot (the old dodge-then-clamp could shove a door back
+  // into a lobby opening — owner screenshot, health condition delay); when
+  // the north wall is full, overflow onto the landing's east cap wall
+  const takenX: number[] = [];
+  let capCount = 0;
+  const slotClear = (x: number) =>
+    northBands.every(([b0, b1]) => x + 0.8 <= b0 || x - 0.8 >= b1) &&
+    takenX.every((t) => Math.abs(x - t) >= 1.9);
+  const portalSign = (c: WorldClass | undefined) => () =>
+    makeSignTexture({
+      widthPx: 768,
+      heightPx: 230,
+      title: `↓ ${c?.label ?? '?'}`,
+      subtitle: `homed in ${c?.wing ?? '?'} wing`,
+      titleSize: 58,
+    });
   landing.portalChildIds.forEach((cid) => {
     const c = byId.get(cid);
-    let x = dodgeNorth(px);
-    while (x !== px) {
-      px = x;
-      x = dodgeNorth(px);
+    let x = G.PIT_X1 + 1.6;
+    while (x <= lx1 - 0.9 && !slotClear(x)) x += 0.1;
+    if (x <= lx1 - 0.9) {
+      takenX.push(x);
+      kit.box(0.08, G.DOOR_H, G.DOOR_W, MAT.door, x, y + G.DOOR_H / 2, G.LANDING_Z1 - 0.05, {});
+      kit.doorFurniture('z-', x, y, G.LANDING_Z1 - 0.05);
+      kit.sign(1.5, 0.45, x, y + G.DOOR_H + 0.45, G.LANDING_Z1 - 0.09, Math.PI, portalSign(c), `downportal:${c?.label}`);
+      interactables.push({
+        kind: 'stair-down',
+        areaId: wc.id,
+        label: `Stairs ↓ ${c?.label ?? '?'}`,
+        targetIds: [cid],
+        triggerPos: kit.local(x, -S, G.LANDING_Z1 - 0.5),
+        radius: 0.7,
+        halfX: 0.55,
+        halfZ: 0.45,
+        auto: true,
+      });
+    } else {
+      // east cap wall, facing west along the landing
+      const zc = 8.7 - capCount * 1.6;
+      capCount++;
+      kit.box(0.08, G.DOOR_H, G.DOOR_W, MAT.door, lx1 - 0.05, y + G.DOOR_H / 2, zc, {});
+      kit.doorFurniture('x-', lx1 - 0.05, y, zc);
+      kit.sign(1.5, 0.45, lx1 - 0.09, y + G.DOOR_H + 0.45, zc, -Math.PI / 2, portalSign(c), `downportal:${c?.label}`);
+      interactables.push({
+        kind: 'stair-down',
+        areaId: wc.id,
+        label: `Stairs ↓ ${c?.label ?? '?'}`,
+        targetIds: [cid],
+        triggerPos: kit.local(lx1 - 0.5, -S, zc),
+        radius: 0.7,
+        halfX: 0.45,
+        halfZ: 0.55,
+        auto: true,
+      });
     }
-    px = Math.min(px, lx1 - 1.0);
-    x = px;
-    px += 2.0;
-    kit.box(0.08, G.DOOR_H, G.DOOR_W, MAT.door, x, y + G.DOOR_H / 2, G.LANDING_Z1 - 0.05, {});
-    kit.doorFurniture('z-', x, y, G.LANDING_Z1 - 0.05);
-    kit.sign(
-      1.5, 0.45, x, y + G.DOOR_H + 0.45, G.LANDING_Z1 - 0.09, Math.PI,
-      () =>
-        makeSignTexture({
-          widthPx: 768,
-          heightPx: 230,
-          title: `↓ ${c?.label ?? '?'}`,
-          subtitle: `homed in ${c?.wing ?? '?'} wing`,
-          titleSize: 58,
-        }),
-      `downportal:${c?.label}`
-    );
-    interactables.push({
-      kind: 'stair-down',
-      areaId: wc.id,
-      label: `Stairs ↓ ${c?.label ?? '?'}`,
-      targetIds: [cid],
-      triggerPos: kit.local(x, -S, G.LANDING_Z1 - 0.5),
-      radius: 0.7,
-      halfX: 0.55,
-      halfZ: 0.45,
-      auto: true,
-    });
   });
 
   // a few waiting chairs at the east end, clear of doors and openings
+  const pxEnd = takenX.length ? Math.max(...takenX) + 1.0 : G.PIT_X1 + 1.0;
   for (let i = 0; i < 3; i++) {
     const chx = lx1 - 0.8 - i * 0.6;
-    if (chx < px + 0.8) break;
+    if (chx < pxEnd + 0.8 || capCount) break;
     if (northBands.some(([b0, b1]) => chx > b0 - 0.45 && chx < b1 + 0.45)) continue;
     kit.chair(chx, y, G.LANDING_Z1 - 0.45, -1);
   }
