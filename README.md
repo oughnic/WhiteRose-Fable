@@ -98,12 +98,18 @@ just a commit.
       the left, self-references ("pig's ears") at the corridor end
 - [x] Lift destination boards (upper superclasses at the top, subtypes below,
       Reception at ground); porter search (M); full A–Z directory
-- [x] **Real wing architecture (finger plan)**: a ground-level Hospital Street
-      (644 m after the double-loading refit) runs east from Reception with every
-      wing's root lobby opening off it; subtypes are real storeys below (storey =
-      inheritance depth, down to −7); 54 genuinely walkable switchback stairwells
-      descend to shared **double-loaded landings** — sibling lobbies open off
-      both sides, halving the walk — no physics engine, just ground-following
+- [x] **Real wing architecture (racetrack plan)**: the Hospital Street is a
+      circulation **loop** — two parallel 337 m streets (wings hang off the
+      outside of each) joined by two glazed cloisters crossing a 56 m
+      courtyard that holds the lawn and the Postgraduate Medical Centre; take
+      whichever way round is shorter. Subtypes are real storeys below (storey
+      = inheritance depth, down to −7); 54 genuinely walkable switchback
+      stairwells descend to shared **double-loaded landings** — sibling
+      lobbies open off both sides — no physics engine, just ground-following.
+      North-street wings are whole-wing 180° rotations (an isometry, so the
+      collision-free layout and "out doors on the right" both survive); the
+      courtyard depth is computed from the real underground envelopes and the
+      audit proves no same-storey clash
 - [x] Portals only where architecture honestly can't: association doors (by
       design), the 13 non-primary-parent stairs and their 13 mirror-side doors —
       all listed in `reports/layout-report.md`
@@ -142,7 +148,11 @@ just a commit.
       6 m projection screen driven by `public/slides/` — arrow keys, presenter
       clickers, or screen taps advance; **H** strips the UI for filming, **L**
       dims the house lights, `?start=theatre` spawns at the lectern. Sited
-      inside the future Stage 7 courtyard (racetrack donut — see PLAN.md)
+      inside the Stage 7 courtyard
+- [x] **Stage 7 — the racetrack donut**: linear street → loop (above); storey
+      culling + sign visibility culling keep the denser plan at pre-loop frame
+      rates (street vista 517 draw calls); courtyard-facing glazing is now
+      genuinely transparent under an overcast Yorkshire sky
 - [ ] Optional remainder: **AI concept illustrations** beside posters — prompts
       ready (`npm run prompts`); generate images, write
       `public/art/illustrations/manifest.json`, done. Cross-browser and real

@@ -171,16 +171,92 @@ export function computeLayout(world) {
     }
   }
 
+  // ---- racetrack loop (Stage 7): wings split across two parallel streets ----
+  // South street = today's street; north street = its mirror across the
+  // courtyard. Wings are assigned in order (preserving the west→east reading)
+  // to the south street until half the total width is placed, the rest north.
+  const wingWidth = (w) => w.rootIds.reduce((n, r) => n + stripWidth(r), 0);
+  const total = world.wings.reduce((n, w) => n + wingWidth(w), 0);
+  let southSum = 0;
+  const streetOf = new Map();
+  for (const w of world.wings) {
+    const south = southSum < total / 2;
+    streetOf.set(w.key, south ? 'south' : 'north');
+    if (south) southSum += wingWidth(w);
+  }
+
   const wings = [];
-  let cursor = 6; // street starts at x=0 (atrium east wall); first wing after a margin
+  const cursors = { south: 6, north: 6 }; // both streets start at x=0 + margin
   for (const wing of world.wings) {
-    const start = cursor;
+    const street = streetOf.get(wing.key);
+    const start = cursors[street];
     for (const rootId of wing.rootIds) {
-      place(rootId, cursor, 0);
-      cursor += stripWidth(rootId);
+      place(rootId, cursors[street], 0);
+      cursors[street] += stripWidth(rootId);
     }
-    wings.push({ key: wing.key, x0: start, x1: cursor, rootIds: wing.rootIds });
-    cursor += G.WING_GAP;
+    wings.push({ key: wing.key, x0: start, x1: cursors[street], rootIds: wing.rootIds, street });
+    cursors[street] += G.WING_GAP;
+  }
+  const xEnd = Math.max(cursors.south, cursors.north) - G.WING_GAP + 6;
+
+  // Mirror each north-street wing 180° in plan: x reflects about the wing's
+  // own centre and every area's flip toggles (reflect-x + reflect-z = a
+  // rotation, so chirality is preserved — out doors stay on the right — and
+  // the wing's collision-free internal layout is preserved verbatim).
+  for (const w of wings) {
+    if (w.street !== 'north') continue;
+    const S = w.x0 + w.x1;
+    for (const c of world.classes) {
+      if (c.wing !== w.key) continue;
+      const a = areas[c.id];
+      a.x = S - a.x;
+      a.flip = !a.flip;
+      a.mirror = true;
+    }
+    const wingIds = new Set(world.classes.filter((c) => c.wing === w.key).map((c) => c.id));
+    for (const l of Object.values(landings)) {
+      if (!wingIds.has(l.parentId)) continue;
+      [l.x0, l.x1] = [S - l.x1, S - l.x0];
+      l.stairX = S - l.stairX;
+      l.mirror = true;
+    }
+  }
+
+  // Courtyard depth C: the inward-facing rows (originally-flipped areas) of
+  // both streets reach under the courtyard at the same storeys; C is computed
+  // from the real pairwise envelopes so nothing can clash (the audit's
+  // same-storey rect check then proves it). Floor of 28 m fits the
+  // Postgraduate Medical Centre pavilion (z ≤ 33.5) plus lawn.
+  const southIn = [];
+  const northIn = [];
+  for (const c of world.classes) {
+    const a = areas[c.id];
+    if (!a.mirror && a.flip) southIn.push(a);
+    if (a.mirror && !a.flip) northIn.push(a);
+  }
+  let C = 28;
+  const gap = 2;
+  const CORR_HX = G.CORRIDOR_W / 2 + 0.3; // corridor half-width incl. walls
+  const LOB_HX = G.LOBBY_W / 2 + 0.15;
+  const xOver = (a, b, ha, hb) => Math.abs(a.x - b.x) < ha + hb;
+  for (const s of southIn) {
+    for (const n of northIn) {
+      if (s.level !== n.level) continue;
+      if (xOver(s, n, CORR_HX, CORR_HX)) C = Math.max(C, 12 + s.corridorLen + n.corridorLen + gap);
+      if (xOver(s, n, CORR_HX, LOB_HX)) C = Math.max(C, 12 + s.corridorLen + gap);
+      if (xOver(s, n, LOB_HX, CORR_HX)) C = Math.max(C, 12 + n.corridorLen + gap);
+    }
+  }
+  C = Math.ceil(C);
+  // Mirror constant: the map z → K−z takes the south street band [7,11] onto
+  // the north band [11+C, 15+C]. Mirrored areas build with origin z=K (roots
+  // and outward rows, flipped) or z=K−17 (inward rows, unflipped).
+  const K = G.STREET_Z1 + C + G.STREET_Z0 + 4; // = 22 + C
+
+  for (const c of world.classes) {
+    const a = areas[c.id];
+    a.mirror = !!a.mirror;
+    a.oz = a.mirror ? (a.flip ? K : K - 17) : a.flip ? 17 : 0;
   }
 
   const nonPrimaryUp = [];
@@ -194,6 +270,14 @@ export function computeLayout(world) {
     homeChildren,
     nonPrimaryUp,
     wings,
-    street: { x0: 0, x1: cursor - G.WING_GAP + 6 },
+    street: { x0: 0, x1: xEnd },
+    loop: {
+      C,
+      K,
+      xEnd,
+      south: { z0: G.STREET_Z0, z1: G.STREET_Z1 },
+      north: { z0: G.STREET_Z1 + C, z1: G.STREET_Z1 + C + 4 },
+      connectors: { west: [0.2, 3.8], east: [xEnd - 3.8, xEnd - 0.2] },
+    },
   };
 }

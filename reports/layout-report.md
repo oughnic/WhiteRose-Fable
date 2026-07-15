@@ -1,6 +1,14 @@
-# Layout report (Stage 2)
+# Layout report (Stages 2 + 7)
 
-Street length: 644 m · wings west→east: event (125 m), mental-object (159 m), physical-object (12 m), resources (35 m), role (51 m), stative (116 m), time-interval (63 m)
+Racetrack loop: two streets of 337 m joined by two glazed
+cloisters across a 56 m courtyard (computed from the real underground
+envelopes so no same-storey clash is possible; verified above).
+
+| Street | Wings (west→east) |
+|---|---|
+| south | event (125 m), mental-object (159 m) |
+| north | physical-object (12 m), resources (35 m), role (51 m), stative (116 m), time-interval (63 m) |
+
 Real stairwells + landings: 54
 Deepest storey: level −7
 

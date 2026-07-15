@@ -39,8 +39,12 @@ export interface AreaPlacement {
   x: number;
   level: number;
   y: number;
-  /** North-row areas are rotated 180°: lobby z ∈ [10,17], corridor beyond. */
+  /** Effective 180° rotation (row flip XOR wing mirror). */
   flip: boolean;
+  /** True when the area's wing lives on the north street (whole wing rotated). */
+  mirror: boolean;
+  /** World-z of the area group's origin (0, 17, K or K−17). */
+  oz: number;
   corridorLen: number;
 }
 
@@ -51,6 +55,8 @@ export interface LandingPlacement {
   x0: number;
   x1: number;
   stairX: number;
+  /** True when the parent wing is mirrored onto the north street. */
+  mirror?: boolean;
   homeChildIds: string[];
   southIds: string[];
   northIds: string[];
@@ -62,6 +68,18 @@ export interface WingPlacement {
   x0: number;
   x1: number;
   rootIds: string[];
+  street: 'south' | 'north';
+}
+
+export interface LoopPlacement {
+  /** Courtyard depth between the two streets' inner walls. */
+  C: number;
+  /** Mirror constant: z → K−z maps the south street band onto the north. */
+  K: number;
+  xEnd: number;
+  south: { z0: number; z1: number };
+  north: { z0: number; z1: number };
+  connectors: { west: [number, number]; east: [number, number] };
 }
 
 export interface Layout {
@@ -71,6 +89,7 @@ export interface Layout {
   nonPrimaryUp: { childId: string; parentId: string }[];
   wings: WingPlacement[];
   street: { x0: number; x1: number };
+  loop: LoopPlacement;
 }
 
 export declare function computeLayout(world: unknown): Layout;

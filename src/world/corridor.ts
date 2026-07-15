@@ -901,15 +901,17 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   ];
   if (landing) {
     // the stair shaft (spans both storeys) and the landing one storey down
+    // (setFromPoints because mirrored parents flip the z direction too)
+    const fz = flip ? -1 : 1;
     boxes.push(
-      new THREE.Box3(
+      new THREE.Box3().setFromPoints([
         kit.local(G.PIT_X0 - 0.2, -G.STOREY - 0.5, G.PIT_Z0 - 0.2),
-        kit.local(G.PIT_X1 + 0.2, 2.5, LD + 0.2)
-      ),
-      new THREE.Box3(
-        new THREE.Vector3(landing.x0 - 0.3, origin.y - G.STOREY - 0.5, origin.z + 5.4),
-        new THREE.Vector3(landing.x1 + 0.3, origin.y - G.STOREY + 2.5, origin.z + G.LANDING_Z1 + 0.3)
-      )
+        kit.local(G.PIT_X1 + 0.2, 2.5, LD + 0.2),
+      ]),
+      new THREE.Box3().setFromPoints([
+        new THREE.Vector3(landing.x0 - 0.3, origin.y - G.STOREY - 0.5, origin.z + fz * 5.4),
+        new THREE.Vector3(landing.x1 + 0.3, origin.y - G.STOREY + 2.5, origin.z + fz * (G.LANDING_Z1 + 0.3)),
+      ])
     );
   }
 
@@ -986,9 +988,13 @@ function buildStairwellAndLanding(
   kit.box(laneW + 0.2, 0.9, 0.08, MAT.rail, eastLaneC, 0.45, G.PIT_Z1 + 0.04); // entry stays open on the west lane
 
   // ---- the landing (one storey down, z ∈ [7,10], spanning the children) ------
+  // World x → parent-local x must respect the parent's flip: mirrored wings
+  // (north street) have flipped parents, and their whole x layout is
+  // reflected in step, so this reproduces the original local geometry.
+  const fx = layout.areas[wc.id].flip ? -1 : 1;
+  const toLocalX = (wx: number) => fx * (wx - origin.x);
   const y = -S;
-  const lx0 = landing.x0 - origin.x;
-  const lx1 = landing.x1 - origin.x;
+  const [lx0, lx1] = [toLocalX(landing.x0), toLocalX(landing.x1)].sort((a, b) => a - b);
   const lw = lx1 - lx0;
   const lcx = (lx0 + lx1) / 2;
   const zc = (G.LANDING_Z0 + G.LANDING_Z1) / 2;
@@ -1002,7 +1008,7 @@ function buildStairwellAndLanding(
   // double-loaded walls: lobbies open off both sides (children build their own
   // jambs), so each wall is the complement of that row's openings
   const band = (cid: string): [number, number] => {
-    const cx = layout.areas[cid].x - origin.x;
+    const cx = toLocalX(layout.areas[cid].x);
     return [cx - G.LOBBY_W / 2, cx + G.LOBBY_W / 2];
   };
   const wallFill = (z: number, trim: 'z+' | 'z-', gapsIn: [number, number][]): [number, number][] => {

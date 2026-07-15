@@ -457,6 +457,9 @@ export class SignManager {
     const wanted: { e: SignEntry; d: number }[] = [];
     for (const e of this.entries) {
       const d = e.pos.distanceTo(playerPos);
+      // beyond the release radius a sign is fog-washed and unreadable, but
+      // still a draw call each — hide it (matters on the compact loop)
+      e.mesh.visible = d < releaseRadius;
       if (!e.ready && d < fillRadius) {
         wanted.push({ e, d });
       } else if (e.ready && d > releaseRadius) {

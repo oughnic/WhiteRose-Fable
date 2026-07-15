@@ -128,9 +128,12 @@ const addRect = (level, x0, x1, z0, z1, label) => {
 for (const c of classes) {
   const a = layout.areas[c.id];
   const len = corridorLen(c.out.length, c.in.length, c.notes.length, c.examples.length);
-  // north-row (flipped) areas mirror through z=17: lobby [10,17], corridor beyond
-  const zl = a.flip ? [17 - G.LOBBY_D, 17] : [0, G.LOBBY_D];
-  const zc = a.flip ? [17, 17 + len + 0.3] : [-len - 0.3, 0];
+  // general placement: flipped areas rotate 180° about their origin (oz), so
+  // the lobby lies at [oz−7, oz] and the corridor beyond; this covers all
+  // four origins (0, 17, K, K−17) — the cross-street courtyard clearance is
+  // exactly what this same-storey check now proves
+  const zl = a.flip ? [a.oz - G.LOBBY_D, a.oz] : [a.oz, a.oz + G.LOBBY_D];
+  const zc = a.flip ? [a.oz, a.oz + len + 0.3] : [a.oz - len - 0.3, a.oz];
   addRect(a.level, a.x - G.LOBBY_W / 2, a.x + G.LOBBY_W / 2, zl[0], zl[1], `${c.label} lobby`);
   addRect(a.level, a.x - G.CORRIDOR_W / 2 - 0.2, a.x + G.CORRIDOR_W / 2 + 0.2, zc[0], zc[1], `${c.label} corridor`);
 }
@@ -138,10 +141,17 @@ for (const l of Object.values(layout.landings)) {
   const p = byId.get(l.parentId);
   // end-cap walls extend 0.075 beyond the span — pad by exactly that; the
   // z band is exact since lobbies now adjoin on BOTH sides (double-loaded)
-  addRect(l.level, l.x0 - 0.08, l.x1 + 0.08, G.LANDING_Z0, G.LANDING_Z1, `${p.label} landing`);
-  // the stair shaft + passage occupy the child storey inside the reserved slot
+  const K = layout.loop.K;
+  const lz = l.mirror ? [K - G.LANDING_Z1, K - G.LANDING_Z0] : [G.LANDING_Z0, G.LANDING_Z1];
+  addRect(l.level, l.x0 - 0.08, l.x1 + 0.08, lz[0], lz[1], `${p.label} landing`);
+  // the stair shaft + passage occupy the child storey inside the reserved
+  // slot — flipped (mirrored-wing) parents reflect the pit in x and z
   const a = layout.areas[l.parentId];
-  addRect(l.level, a.x + G.PIT_X0 - 0.15, a.x + G.PIT_X1 + 0.15, G.PIT_Z0 - 0.15, G.LOBBY_D, `${p.label} stair shaft`);
+  const px = a.flip
+    ? [a.x - G.PIT_X1 - 0.15, a.x - G.PIT_X0 + 0.15]
+    : [a.x + G.PIT_X0 - 0.15, a.x + G.PIT_X1 + 0.15];
+  const pz = a.flip ? [a.oz - G.LOBBY_D, a.oz - G.PIT_Z0 + 0.15] : [a.oz + G.PIT_Z0 - 0.15, a.oz + G.LOBBY_D];
+  addRect(l.level, px[0], px[1], pz[0], pz[1], `${p.label} stair shaft`);
 }
 let overlapFails = 0;
 for (const [level, rects] of rectsByLevel) {
@@ -159,16 +169,22 @@ for (const [level, rects] of rectsByLevel) {
 }
 if (!overlapFails) pass(`no same-storey overlaps across ${rectsByLevel.size} levels`);
 
-// wing street intervals disjoint
+// wing street intervals disjoint — per street side (the racetrack's two
+// streets may overlap in x by design; only same-street overlap is a fault)
 let wingsOk = true;
-const sorted = [...layout.wings].sort((a, b) => a.x0 - b.x0);
-for (let i = 1; i < sorted.length; i++) {
-  if (sorted[i].x0 < sorted[i - 1].x1) {
-    wingsOk = false;
-    fail(`street intervals overlap: ${sorted[i - 1].key} × ${sorted[i].key}`);
+for (const side of ['south', 'north']) {
+  const sorted = layout.wings.filter((w) => w.street === side).sort((a, b) => a.x0 - b.x0);
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i].x0 < sorted[i - 1].x1) {
+      wingsOk = false;
+      fail(`${side} street intervals overlap: ${sorted[i - 1].key} × ${sorted[i].key}`);
+    }
   }
 }
-if (wingsOk) pass(`wing street intervals disjoint (street ${Math.round(layout.street.x1)} m)`);
+if (wingsOk)
+  pass(
+    `wing street intervals disjoint per side (loop ${Math.round(layout.street.x1)} m × 2, courtyard ${layout.loop.C} m)`
+  );
 
 // ---- 5. portal fallback report (Stage 2 exit criterion) -----------------------
 const label = (id) => byId.get(id)?.label ?? id;
@@ -182,11 +198,17 @@ const lobbyOnlyDown = classes
   .filter((c) => c.subs.length && !layout.landings[c.id])
   .flatMap((c) => c.subs.map((s) => `- ${c.label} —↓→ ${label(s)}  (no home children — lobby portal door)`));
 
-const layoutReport = `# Layout report (Stage 2)
+const layoutReport = `# Layout report (Stages 2 + 7)
 
-Street length: ${Math.round(layout.street.x1)} m · wings west→east: ${layout.wings
-  .map((w) => `${w.key} (${Math.round(w.x1 - w.x0)} m)`)
-  .join(', ')}
+Racetrack loop: two streets of ${Math.round(layout.street.x1)} m joined by two glazed
+cloisters across a ${layout.loop.C} m courtyard (computed from the real underground
+envelopes so no same-storey clash is possible; verified above).
+
+| Street | Wings (west→east) |
+|---|---|
+| south | ${layout.wings.filter((w) => w.street === 'south').map((w) => `${w.key} (${Math.round(w.x1 - w.x0)} m)`).join(', ')} |
+| north | ${layout.wings.filter((w) => w.street === 'north').map((w) => `${w.key} (${Math.round(w.x1 - w.x0)} m)`).join(', ')} |
+
 Real stairwells + landings: ${Object.keys(layout.landings).length}
 Deepest storey: level −${Math.max(...classes.map((c) => c.floor))}
 

@@ -10,7 +10,7 @@ import { SignManager, type ArtEntry } from './world/signage';
 import { wingColor } from './world/colors';
 import { Player } from './engine/player';
 import { showMenu, isMenuOpen, type MenuItem } from './ui/menu';
-import { computeLayout } from '../tools/lib/layout.mjs';
+import { computeLayout, G } from '../tools/lib/layout.mjs';
 
 const PORTAL_COOLDOWN_MS = 700;
 
@@ -69,10 +69,12 @@ async function boot() {
 
   // --- scene ---------------------------------------------------------------
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x22262b);
+  // an overcast Yorkshire sky — visible through the courtyard glazing since
+  // the racetrack loop, so no longer the old near-black
+  scene.background = new THREE.Color(0x5c6770);
   // depth haze: long views fade out, and the far plane culls most of the
   // street (the difference between 7 fps and 60 on the spine vista)
-  scene.fog = phone ? new THREE.Fog(0x22262b, 42, 120) : new THREE.Fog(0x22262b, 55, 150);
+  scene.fog = phone ? new THREE.Fog(0x5c6770, 42, 120) : new THREE.Fog(0x5c6770, 55, 150);
   scene.add(new THREE.HemisphereLight(0xffffff, 0xb9bec2, 1.0));
   scene.add(new THREE.AmbientLight(0xffffff, 0.38));
   const sun = new THREE.DirectionalLight(0xffffff, 0.4);
@@ -112,9 +114,9 @@ async function boot() {
   void deck.load();
   for (const wc of world.classes) {
     const p = layout.areas[wc.id];
-    // north-row areas are rotated 180°; their origin sits at z=17 so the
-    // lobby opening lands on the landing's north edge (z=10)
-    const area = buildArea(wc, ctx, new THREE.Vector3(p.x, p.y, p.flip ? 17 : 0));
+    // origin z comes from the layout: 0/17 on the south street, K/K−17 for
+    // wings mirrored onto the north street (flip handles the 180° rotation)
+    const area = buildArea(wc, ctx, new THREE.Vector3(p.x, p.y, p.oz));
     areas.set(area.id, area);
   }
   for (const a of areas.values()) scene.add(a.group);
@@ -160,20 +162,22 @@ async function boot() {
       scene.add(w.group);
       walkers.push({ w, owner });
     };
-    // porters and visitors pacing beats of the street
+    // porters and visitors pacing beats of both sides of the loop
     const nStreet = people === 'full' ? 7 : 3;
     for (let i = 0; i < nStreet; i++) {
       const x0 = 4 + ((layout.street.x1 - 70) * i) / Math.max(1, nStreet - 1);
-      addWalker(street, new THREE.Vector3(x0, 0, 9), new THREE.Vector3(Math.min(x0 + 55, layout.street.x1 - 4), 0, 9));
+      const wz = i % 2 ? layout.loop.north.z0 + 2 : 9;
+      addWalker(street, new THREE.Vector3(x0, 0, wz), new THREE.Vector3(Math.min(x0 + 55, layout.street.x1 - 4), 0, wz));
     }
     if (people === 'full') {
-      // a nurse on each sizeable landing
+      // a nurse on each sizeable landing (mirrored wings put theirs at K−8.5)
       let n = 0;
       for (const [pid, l] of Object.entries(layout.landings)) {
         if (l.x1 - l.x0 < 18 || n >= 12) continue;
         const owner = areas.get(pid);
         if (!owner) continue;
-        addWalker(owner, new THREE.Vector3(l.x0 + 1.2, l.y, 8.5), new THREE.Vector3(l.x1 - 1.2, l.y, 8.5));
+        const wz = l.mirror ? layout.loop.K - 8.5 : 8.5;
+        addWalker(owner, new THREE.Vector3(l.x0 + 1.2, l.y, wz), new THREE.Vector3(l.x1 - 1.2, l.y, wz));
         n++;
       }
       // the odd wanderer in the longer corridors
@@ -183,8 +187,8 @@ async function boot() {
         if (p.corridorLen < 24 || c >= 8) continue;
         const owner = areas.get(wc.id);
         if (!owner) continue;
-        const z0 = p.flip ? 17.8 : -0.8;
-        const z1 = p.flip ? 17 + p.corridorLen - 2 : -(p.corridorLen - 2);
+        const z0 = p.oz + (p.flip ? 0.8 : -0.8);
+        const z1 = p.oz + (p.flip ? p.corridorLen - 2 : -(p.corridorLen - 2));
         addWalker(owner, new THREE.Vector3(p.x, p.y, z0), new THREE.Vector3(p.x, p.y, z1));
         c++;
       }
@@ -194,10 +198,17 @@ async function boot() {
   const VIS_RANGE = phone ? 140 : 175;
   function updateVisibility() {
     const p = player.position;
+    const py = player.floorPosition.y;
     for (const a of areas.values()) {
       let d = Infinity;
       for (const b of a.boxes) d = Math.min(d, b.distanceToPoint(p));
-      a.group.visible = d < VIS_RANGE;
+      // storey culling: only same-storey areas render at distance — every
+      // cross-storey sightline (pit tops, stairs, landings) lies within 30 m
+      // of the areas involved, and anything further is physically occluded.
+      // This is what keeps the compact racetrack loop, with both streets
+      // inside the far plane, at street-vista frame rates.
+      const ay = a.wc ? layout.areas[a.wc.id].y : 0;
+      a.group.visible = d < VIS_RANGE && (Math.abs(ay - py) < G.STOREY / 2 || d < 30);
     }
   }
   updateVisibility();
@@ -327,6 +338,7 @@ async function boot() {
     player.teleport({ x: h.x, y: h.y, z: h.z }, h.yaw);
     if (area) setArea(area);
     insideTriggers = triggersAt(player.floorPosition);
+    updateVisibility(); // arrive with the right storeys already drawn
     flashFade();
     toast(`Back → ${area?.label ?? 'previous stop'}`);
     lastTravelAt = performance.now();
@@ -339,6 +351,7 @@ async function boot() {
     player.teleport(dest.spawnPos, dest.spawnYaw);
     setArea(dest);
     insideTriggers = triggersAt(player.floorPosition); // arrive disarmed
+    updateVisibility();
     flashFade();
     if (note) toast(note);
     lastTravelAt = performance.now();
@@ -368,6 +381,7 @@ async function boot() {
       player.teleport(dest.liftPos, dest.liftYaw ?? 0);
       setArea(dest);
       insideTriggers = triggersAt(player.floorPosition);
+      updateVisibility();
       flashFade();
       toast(`Lift → ${dest.label}`);
       lastTravelAt = performance.now();
@@ -396,6 +410,7 @@ async function boot() {
     }
     setArea(dest);
     insideTriggers = triggersAt(player.floorPosition); // arrive disarmed
+    updateVisibility();
     flashFade();
     lastTravelAt = performance.now();
   }
@@ -493,7 +508,7 @@ async function boot() {
                <li>Add <code>?start=theatre</code> to the address to begin at the lectern.</li></ul>
                <h3>Your own deck</h3>
                <p>Export slides as PNG/JPG (1920×1080), copy them into <code>slides/</code>, and list them in <code>slides/manifest.json</code> — video clips (.mp4) can be listed too.</p>`
-            : `<p>The hospital street: the ground-level spine connecting all wings. Root concepts open off the south side; courtyard windows line the north.</p>`;
+            : `<p>The hospital street: a racetrack loop of two parallel streets joined by glazed cloisters across the courtyard — take whichever way round is shorter. Wing entrances open off the outside of each street; the courtyard holds the lawn and the Postgraduate Medical Centre.</p>`;
     } else {
       html += `<p>${esc(wc.description ?? 'Definition pending.')}</p>`;
       const facts: string[] = [];
@@ -954,7 +969,8 @@ async function boot() {
   };
 
   console.info(
-    `[hospital] built ${areas.size} areas, ${allInteractables.length} interactables, ${signs.count} signs, street ${Math.round(layout.street.x1)}m`
+    `[hospital] built ${areas.size} areas, ${allInteractables.length} interactables, ${signs.count} signs, ` +
+      `loop ${Math.round(layout.street.x1)}m × 2 + ${layout.loop.C}m courtyard`
   );
 }
 
