@@ -53,10 +53,10 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
 
   // reception desk (oak counter), waiting benches, and a row of utility chairs
   kit.box(1.1, 1.1, 5.2, MAT.oak, X0 + 4.5, 0.55, cz);
-  for (const bz of [4.4, 13.6]) {
-    kit.box(4.2, 0.46, 0.55, MAT.oak, -10, 0.23, bz);
-    kit.box(4.2, 0.5, 0.09, MAT.oak, -10, 0.7, bz + (bz < cz ? -0.24 : 0.24));
-  }
+  // one bench on the south side only — the north wall stays clear so the
+  // directory boards are visible (and tappable) from across the hall
+  kit.box(4.2, 0.46, 0.55, MAT.oak, -10, 0.23, 4.4);
+  kit.box(4.2, 0.5, 0.09, MAT.oak, -10, 0.7, 4.4 - 0.24);
   for (let i = 0; i < 5; i++) kit.chair(-5.8 + i * 0.62, 0, 14.35, -1);
   // west row sits under the wings directory, clear of the theatre doorway
   for (let i = 0; i < 3; i++) kit.chair(-17.9 + i * 0.62, 0, 14.35, -1);
@@ -167,8 +167,8 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
   // the receptionist is on duty whenever there are people about
   if (people !== 'off') {
     kit.stand(X0 + 3.7, 0, cz, Math.PI / 2, 137); // behind the desk, facing the hall
-    kit.sit(-9.4, 0.02, 4.55, 1, 553); // waiting on a bench
-    kit.sit(-11.1, 0.02, 13.45, -1, 887);
+    kit.sit(-9.4, 0.02, 4.55, 1, 553); // waiting on the bench
+    kit.sit(-10.6, 0.02, 4.55, 1, 887);
   }
   kit.populate(people, 9001);
   kit.finalize();

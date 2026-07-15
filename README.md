@@ -53,6 +53,11 @@ even the longest is fully readable); ceiling-hung signs name each concept
 from a distance; corridors end in a fire exit (or the concept's
 self-reference doors).
 
+URL parameters: `?concept=care%20process` starts in that concept's lobby
+(handy for sharing a link to one definition); `?start=theatre` starts at
+the lecture-theatre lectern; `?people=off|low|full` overrides the
+activity tier.
+
 ## Filming a presentation
 
 The **Postgraduate Medical Centre** (through Reception's north door, on the

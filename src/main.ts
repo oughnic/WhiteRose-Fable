@@ -231,6 +231,21 @@ async function boot() {
     player.teleport(theatre.lecternPos, theatre.lecternYaw);
     setArea(theatre);
   }
+  // ?concept=care%20process: begin in that concept's lobby
+  {
+    const wanted = new URLSearchParams(location.search).get('concept')?.trim().toLowerCase();
+    if (wanted) {
+      const wc = world.classes.find((c) => c.label.toLowerCase() === wanted);
+      const dest = wc && areas.get(wc.id);
+      if (dest) {
+        player.teleport(dest.spawnPos, dest.spawnYaw);
+        setArea(dest);
+        updateVisibility();
+      } else {
+        toast(`No concept called “${wanted}” — press M for the porter`);
+      }
+    }
+  }
 
   // --- lift doors + arrival chime ---------------------------------------------
   let liftTransit = false;
