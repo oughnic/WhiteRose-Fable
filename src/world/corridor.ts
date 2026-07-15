@@ -67,7 +67,11 @@ export interface BuiltArea {
   /** Animated cab doors + where they are (world), for proximity opening. */
   lift?: { doors: LiftDoors; doorwayPos: THREE.Vector3 };
   /** In-world boards you can click/tap: UV cells resolve to destinations. */
-  boards?: { mesh: THREE.Mesh; cells: { rect: [number, number, number, number]; id: string; label: string }[] }[];
+  boards?: {
+    kind: 'lift' | 'directory';
+    mesh: THREE.Mesh;
+    cells: { rect: [number, number, number, number]; id: string; label: string }[];
+  }[];
   /** How many note/example notices were hung (content audit). */
   notices?: number;
   /** Tight boxes for "which area am I in" — tested against the FEET position. */
@@ -654,6 +658,50 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   let liftPos: THREE.Vector3 | undefined;
   let liftYaw: number | undefined;
   let lift: BuiltArea['lift'];
+
+  // destination board data — computed once, shared by the lobby board, the
+  // in-cab board, and their tappable cells
+  const boardRows: BoardRow[] = [];
+  const boardDests: (string | null)[] = [];
+  {
+    const anc = ancestorLevels(wc, byId);
+    const maxLevel = anc.length ? Math.max(...anc.map((a) => a.level)) : 0;
+    for (let lv = maxLevel; lv >= 1; lv--) {
+      for (const a of anc.filter((x) => x.level === lv)) {
+        const c = byId.get(a.id);
+        boardRows.push({ text: `▲${lv} ${c?.label ?? '?'}`, chip: wingColor(c?.wing ?? '') });
+        boardDests.push(a.id);
+      }
+    }
+    boardRows.push({ text: `● ${wc.label}`, strong: true, chip: color });
+    boardDests.push(null); // you are here
+    for (const id of wc.subs) {
+      const c = byId.get(id);
+      boardRows.push({ text: `▼1 ${c?.label ?? '?'}`, chip: wingColor(c?.wing ?? '') });
+      boardDests.push(id);
+    }
+    boardRows.push({ text: '⌂ Reception' });
+    boardDests.push(ATRIUM_ID);
+  }
+  const boardSpec = {
+    widthPx: 850,
+    heightPx: 750,
+    title: hasLift ? 'Lift' : 'Exit',
+    subtitle: wc.label,
+    rows: boardRows,
+    rowSize: boardRows.length > 10 ? 30 : 38,
+    columns: boardRows.length > 10 ? 2 : 1,
+  };
+  const boardCells = (() => {
+    const rects = boardCellRects(boardSpec, boardRows.length);
+    return boardRows.flatMap((r, i) =>
+      rects[i] && boardDests[i]
+        ? [{ rect: rects[i]!, id: boardDests[i]!, label: r.text.replace(/^[▲▼●⌂]\S* ?/u, '') }]
+        : []
+    );
+  })();
+  let cabBoardMesh: THREE.Mesh | undefined;
+
   if (hasLift) {
     const cx0 = 2.0;
     const cx1 = 3.42;
@@ -704,7 +752,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     kit.steelSpec({ w: 1.24, h: 0.05, d: 0.04, x: ccx + 0.04, y: 0.92, z: cz1 - 0.13 });
     kit.steelSpec({ w: 0.04, h: 0.05, d: 1.44, x: cx1 - 0.13, y: 0.92, z: ccz });
     kit.sign(
-      0.42, 0.15, ccx + 0.35, 1.78, cz0 + 0.09, 0,
+      0.42, 0.15, ccx + 0.35, 2.02, cz0 + 0.09, 0,
       () =>
         makeSignTexture({
           widthPx: 336,
@@ -731,20 +779,8 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
         }),
       `liftsmoke:${wc.label}`
     );
-    // button panel inside, on the south cab wall
-    kit.sign(
-      0.42, 0.6, ccx + 0.35, 1.35, cz0 + 0.09, 0,
-      () =>
-        makeSignTexture({
-          widthPx: 256,
-          heightPx: 366,
-          title: '▲ ▼',
-          subtitle: 'select destination',
-          titleSize: 84,
-          align: 'center',
-        }),
-      `liftpanel:${wc.label}`
-    );
+    // in-cab destination board: tap a row to ride (same cells as the lobby's)
+    cabBoardMesh = kit.sign(0.95, 1.05, ccx - 0.08, 1.3, cz0 + 0.09, 0, () => makeBoardTexture(boardSpec), `liftcab:${wc.label}`);
     liftPos = kit.local(ccx, 0, ccz);
     liftYaw = Math.PI / 2 + flipYaw; // arriving passengers face the doorway
     interactables.push({
@@ -758,39 +794,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       prompt: 'E — Lift: select destination',
     });
   }
-  // lift/exit destination board — rows computed eagerly so the same data
-  // paints the texture AND defines the tappable cells on the mesh
-  const boardRows: BoardRow[] = [];
-  const boardDests: (string | null)[] = [];
-  {
-    const anc = ancestorLevels(wc, byId);
-    const maxLevel = anc.length ? Math.max(...anc.map((a) => a.level)) : 0;
-    for (let lv = maxLevel; lv >= 1; lv--) {
-      for (const a of anc.filter((x) => x.level === lv)) {
-        const c = byId.get(a.id);
-        boardRows.push({ text: `▲${lv} ${c?.label ?? '?'}`, chip: wingColor(c?.wing ?? '') });
-        boardDests.push(a.id);
-      }
-    }
-    boardRows.push({ text: `● ${wc.label}`, strong: true, chip: color });
-    boardDests.push(null); // you are here
-    for (const id of wc.subs) {
-      const c = byId.get(id);
-      boardRows.push({ text: `▼1 ${c?.label ?? '?'}`, chip: wingColor(c?.wing ?? '') });
-      boardDests.push(id);
-    }
-    boardRows.push({ text: '⌂ Reception' });
-    boardDests.push(ATRIUM_ID);
-  }
-  const boardSpec = {
-    widthPx: 850,
-    heightPx: 750,
-    title: hasLift ? 'Lift' : 'Exit',
-    subtitle: wc.label,
-    rows: boardRows,
-    rowSize: boardRows.length > 10 ? 30 : 38,
-    columns: boardRows.length > 10 ? 2 : 1,
-  };
+  // lobby lift/exit destination board — same shared spec + cells as the cab's
   const boardMesh = kit.sign(
     1.7, 1.5, LW / 2 - 0.09, 1.7, 3.1, -Math.PI / 2,
     () => makeBoardTexture(boardSpec),
@@ -798,11 +802,8 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   );
   let boards: BuiltArea['boards'];
   if (hasLift) {
-    const rects = boardCellRects(boardSpec, boardRows.length);
-    const cells = boardRows.flatMap((r, i) =>
-      rects[i] && boardDests[i] ? [{ rect: rects[i]!, id: boardDests[i]!, label: r.text.replace(/^[▲▼●⌂]\S* ?/u, '') }] : []
-    );
-    boards = [{ mesh: boardMesh, cells }];
+    boards = [{ kind: 'lift', mesh: boardMesh, cells: boardCells }];
+    if (cabBoardMesh) boards.push({ kind: 'lift', mesh: cabBoardMesh, cells: boardCells });
   }
 
   // ---- non-primary parents: portal stair doors on the left lobby wall --------

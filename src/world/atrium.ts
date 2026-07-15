@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { World } from '../types';
-import { makeBoardTexture, makeSignTexture, SignManager, type ArtEntry } from './signage';
+import { makeBoardTexture, boardCellRects, makeSignTexture, SignManager, type ArtEntry } from './signage';
 import { wingColor } from './colors';
 import { AreaKit, MAT, hangPicture, ATRIUM_ID, type BuiltArea, type PeopleTier } from './corridor';
 import { G } from '../../tools/lib/layout.mjs';
@@ -90,42 +90,50 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
     'to-street'
   );
 
-  // directory boards on the north wall: wing summary + full A–Z
-  kit.sign(
-    3.4, 2.4, -20, 1.9, Z1 - 0.09, Math.PI,
-    () =>
-      makeBoardTexture({
-        widthPx: 1024,
-        heightPx: 724,
-        title: 'Hospital directory',
-        subtitle: 'wings along Hospital Street, west to east',
-        rows: world.wings.map((w) => ({
-          text: w.annex ? w.label : `${w.label} wing`,
-          sub: `${w.classCount} concepts`,
-          chip: wingColor(w.key),
-        })),
-        rowSize: 44,
-      }),
-    'directory-wings'
-  );
-  kit.sign(
-    6.4, 3.0, -9, 1.85, Z1 - 0.09, Math.PI,
-    () =>
-      makeBoardTexture({
-        widthPx: 2048,
-        heightPx: 960,
-        title: 'Concepts A–Z',
-        subtitle: 'press M anywhere for the porter (search & teleport)',
-        rows: world.classes.map((c) => ({
-          text: c.label,
-          sub: c.roomNumber ?? undefined,
-          chip: wingColor(c.wing),
-        })),
-        rowSize: 17,
-        columns: 4,
-      }),
-    'directory-az'
-  );
+  // directory boards on the north wall: wing summary + full A–Z, both tappable
+  const wingSpec = {
+    widthPx: 1024,
+    heightPx: 724,
+    title: 'Hospital directory',
+    subtitle: 'wings west to east — tap one to visit its entrance',
+    rows: world.wings.map((w) => ({
+      text: w.annex ? w.label : `${w.label} wing`,
+      sub: `${w.classCount} concepts`,
+      chip: wingColor(w.key),
+    })),
+    rowSize: 44,
+  };
+  const wingMesh = kit.sign(3.4, 2.4, -20, 1.9, Z1 - 0.09, Math.PI, () => makeBoardTexture(wingSpec), 'directory-wings');
+  const wingRects = boardCellRects(wingSpec, world.wings.length);
+  const azSpec = {
+    widthPx: 2048,
+    heightPx: 1152,
+    title: 'Concepts A–Z',
+    subtitle: 'tap a concept to go there · or press M anywhere for the porter',
+    rows: world.classes.map((c) => ({
+      text: c.label,
+      sub: c.roomNumber ?? undefined,
+      chip: wingColor(c.wing),
+    })),
+    rowSize: 14, // 5 columns × 35 rows — all 161 concepts fit (and are tappable)
+    columns: 5,
+  };
+  const azMesh = kit.sign(6.4, 3.6, -9, 1.9, Z1 - 0.09, Math.PI, () => makeBoardTexture(azSpec), 'directory-az');
+  const azRects = boardCellRects(azSpec, world.classes.length);
+  const boards: BuiltArea['boards'] = [
+    {
+      kind: 'directory',
+      mesh: wingMesh,
+      cells: world.wings.flatMap((w, i) =>
+        wingRects[i] ? [{ rect: wingRects[i]!, id: w.rootIds[0], label: w.annex ? w.label : `${w.label} wing` }] : []
+      ),
+    },
+    {
+      kind: 'directory',
+      mesh: azMesh,
+      cells: world.classes.flatMap((c, i) => (azRects[i] ? [{ rect: azRects[i]!, id: c.id, label: c.label }] : [])),
+    },
+  ];
 
   // the receptionist is on duty whenever there are people about
   if (people !== 'off') {
@@ -144,6 +152,7 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
     colliders: kit.colliders,
     walkables: kit.walkables,
     interactables: [],
+    boards,
     spawnPos: new THREE.Vector3(-14, 0, cz),
     spawnYaw: -Math.PI / 2, // face east toward the street
     boxes: [

@@ -333,6 +333,21 @@ async function boot() {
     lastTravelAt = performance.now();
   }
 
+  /** The full departure ritual: doors close, the car moves, chime on arrival. */
+  function liftDepart(src: BuiltArea | undefined, id: string) {
+    if (src?.lift) {
+      liftTransit = true;
+      src.lift.doors.target = 0;
+      setTimeout(() => {
+        liftTransit = false;
+        if (player.floorPosition.distanceTo(src.lift!.doorwayPos) < 1.7) rideLiftTo(id);
+        else toast('The lift left without you');
+      }, 650);
+    } else {
+      rideLiftTo(id);
+    }
+  }
+
   /** Arrive by lift: inside the destination cab where possible, with the chime. */
   function rideLiftTo(id: string) {
     const dest = areas.get(id);
@@ -401,22 +416,7 @@ async function boot() {
     }
     items.push({ label: '⌂  Reception', sub: 'ground floor', value: ATRIUM_ID });
     showMenu('Lift', wc?.label ?? '', items, {
-      onPick: (id) =>
-        done(() => {
-          const src = areas.get(it.areaId);
-          if (src?.lift) {
-            // the doors close before the car moves — as they should
-            liftTransit = true;
-            src.lift.doors.target = 0;
-            setTimeout(() => {
-              liftTransit = false;
-              if (player.floorPosition.distanceTo(src.lift!.doorwayPos) < 1.7) rideLiftTo(id);
-              else toast('The lift left without you');
-            }, 650);
-          } else {
-            rideLiftTo(id);
-          }
-        }),
+      onPick: (id) => done(() => liftDepart(areas.get(it.areaId), id)),
       onClose: () => done(),
     });
   }
@@ -570,9 +570,10 @@ async function boot() {
   // --- interactive lift boards: look/point at a row and click or tap ----------
   const raycaster = new THREE.Raycaster();
   const boardNdc = new THREE.Vector2();
-  function boardCellAt(nx: number, ny: number): { id: string; label: string } | null {
+  function boardCellAt(nx: number, ny: number): { id: string; label: string; kind: 'lift' | 'directory' } | null {
     const boards = currentArea.boards;
     if (!boards?.length) return null;
+    player.camera.updateMatrixWorld(); // clicks can land between frames
     boardNdc.set(nx, ny);
     raycaster.setFromCamera(boardNdc, player.camera);
     for (const b of boards) {
@@ -580,7 +581,7 @@ async function boot() {
       if (!hit?.uv || hit.distance > 4.2) continue;
       for (const c of b.cells) {
         const [u0, v0, u1, v1] = c.rect;
-        if (hit.uv.x >= u0 && hit.uv.x <= u1 && hit.uv.y >= v0 && hit.uv.y <= v1) return c;
+        if (hit.uv.x >= u0 && hit.uv.x <= u1 && hit.uv.y >= v0 && hit.uv.y <= v1) return { ...c, kind: b.kind };
       }
     }
     return null;
@@ -590,7 +591,15 @@ async function boot() {
     if (performance.now() - lastTravelAt < 400) return false; // tap+click double-fire guard
     const cell = boardCellAt(nx, ny);
     if (!cell) return false;
-    rideLiftTo(cell.id);
+    if (cell.kind === 'lift') {
+      // picking from inside the cab gets the doors-close ritual
+      const src = currentArea;
+      const inCab = src.liftPos && player.floorPosition.distanceTo(src.liftPos) < 1.2;
+      if (inCab) liftDepart(src, cell.id);
+      else rideLiftTo(cell.id);
+    } else {
+      travelToArea(cell.id, `→ ${areas.get(cell.id)?.label ?? cell.label}`);
+    }
     return true;
   }
   renderer.domElement.addEventListener('click', () => {
@@ -704,7 +713,7 @@ async function boot() {
     if (player.controls.isLocked && !liftTransit && !isMenuOpen()) {
       const cell = boardCellAt(0, 0);
       if (cell) {
-        promptEl.textContent = `Click — lift to ${cell.label}`;
+        promptEl.textContent = `Click — ${cell.kind === 'lift' ? 'lift to' : 'go to'} ${cell.label}`;
         promptEl.style.opacity = '1';
       }
     }
