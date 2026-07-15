@@ -162,17 +162,6 @@ export function buildStreet(
         `street:${root?.label}`
       );
     });
-    layout.wings
-      .filter((w) => w.street === side)
-      .forEach((w, i) => {
-        const lineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(wingColor(w.key)) });
-        const doorX = layout.areas[w.rootIds[0]].x;
-        const lz = side === 'south' ? z0 + 0.4 + i * 0.24 : z1 - 0.4 - i * 0.24;
-        kit.box(doorX - x0, 0.012, 0.16, lineMat, (x0 + doorX) / 2, 0.012, lz, {});
-        const stub: [number, number] = side === 'south' ? [z0, lz] : [lz, z1];
-        kit.box(0.16, 0.012, stub[1] - stub[0], lineMat, doorX, 0.012, (stub[0] + stub[1]) / 2, {}); // stub into the door
-      });
-
     // caps: east both runs; west only the north run (the atrium opens the south)
     kit.box(0.15, H, z1 - z0 + 0.3, MAT.wall, x1 + 0.075, H / 2, zc, { solid: true, trim: ['x-'] });
     if (side === 'north') {
@@ -196,6 +185,33 @@ export function buildStreet(
 
   buildRun('south');
   buildRun('north');
+
+  // ---- coloured wayfinding lines: every wing traces back to the Reception
+  // end of the south street — north wings turn up the west cloister in their
+  // own lane, cross the courtyard, then run east to their door
+  const [wc0] = loop.connectors.west;
+  const nSouth = layout.wings.filter((w) => w.street === 'south').length;
+  let kS = 0;
+  let kN = 0;
+  for (const w of layout.wings) {
+    const lineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(wingColor(w.key)) });
+    const doorX = layout.areas[w.rootIds[0]].x;
+    if (w.street === 'south') {
+      const lz = loop.south.z0 + 0.4 + kS * 0.24;
+      kS++;
+      kit.box(doorX - x0, 0.012, 0.16, lineMat, (x0 + doorX) / 2, 0.012, lz, {});
+      kit.box(0.16, 0.012, lz - loop.south.z0, lineMat, doorX, 0.012, (loop.south.z0 + lz) / 2, {}); // stub into the door
+    } else {
+      const laneX = wc0 + 0.55 + kN * 0.62; // its own lane up the cloister
+      const lzS = loop.south.z0 + 0.4 + (nSouth + kN) * 0.24;
+      const lzN = loop.north.z1 - 0.4 - kN * 0.24;
+      kN++;
+      kit.box(laneX - x0, 0.012, 0.16, lineMat, (x0 + laneX) / 2, 0.012, lzS, {}); // from the Reception end
+      kit.box(0.16, 0.012, lzN - lzS, lineMat, laneX, 0.012, (lzS + lzN) / 2, {}); // up the cloister
+      kit.box(doorX - laneX, 0.012, 0.16, lineMat, (laneX + doorX) / 2, 0.012, lzN, {}); // along the north street
+      kit.box(0.16, 0.012, loop.north.z1 - lzN, lineMat, doorX, 0.012, (lzN + loop.north.z1) / 2, {}); // stub into the door
+    }
+  }
 
   // ---- the cloisters: glazed links crossing the courtyard -------------------
   for (const [c0, c1] of connectors) {

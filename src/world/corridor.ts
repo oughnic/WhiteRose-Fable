@@ -552,13 +552,21 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     const z = doorZ(i);
     kit.box(0.08, G.DOOR_H, G.DOOR_W, MAT.door, wallX - sx * 0.05, G.DOOR_H / 2, z, {});
     kit.doorFurniture(sx > 0 ? 'x-' : 'x+', wallX - sx * 0.05, 0, z);
-    kit.sign(
-      1.5, 0.45, wallX - sx * 0.09, G.DOOR_H + 0.45, z,
-      sx > 0 ? -Math.PI / 2 : Math.PI / 2,
-      () =>
-        makeSignTexture({ widthPx: 768, heightPx: 230, title: signTitle, subtitle: signSubtitle, titleSize: 58 }),
-      `doorsign:${label}`
-    );
+    // ceiling-hung door sign over the door's side of the corridor, readable
+    // walking either way: destination concept as the heading, the association
+    // and its multiplicity below (owner request, 15 Jul 2026)
+    const hx = sx * 0.75;
+    for (const s of [1, -1] as const) {
+      kit.sign(
+        1.3, 0.52, hx, 2.42, z + s * 0.015, s > 0 ? 0 : Math.PI,
+        () =>
+          makeSignTexture({ widthPx: 760, heightPx: 304, title: signTitle, subtitle: signSubtitle, titleSize: 50 }),
+        `doorsign:${label}:${s}`
+      );
+    }
+    for (const rx of [hx - 0.45, hx + 0.45]) {
+      kit.steelSpec({ w: 0.03, h: H - 2.69, d: 0.03, x: rx, y: (H + 2.69) / 2, z });
+    }
     interactables.push({
       kind,
       areaId: wc.id,
@@ -578,11 +586,11 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
 
   wc.out.forEach((d, i) => {
     const dest = byId.get(d.targetId)?.label ?? '?';
-    addDoor('right', i, 'door-out', d.elementId, d.label, d.targetId, `${d.label} ${mult(d.min, d.max)}`, `→ ${dest}`);
+    addDoor('right', i, 'door-out', d.elementId, d.label, d.targetId, dest, `${d.label} ${mult(d.min, d.max)}`);
   });
   wc.in.forEach((d, i) => {
     const src = byId.get(d.sourceId)?.label ?? '?';
-    addDoor('left', i, 'door-in', d.elementId, d.label, d.sourceId, src, `${d.label} →`);
+    addDoor('left', i, 'door-in', d.elementId, d.label, d.sourceId, src, `${d.label} ${mult(d.min, d.max)} →`);
   });
 
   // ---- pictures on the bare walls ---------------------------------------------
