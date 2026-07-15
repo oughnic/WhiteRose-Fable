@@ -82,6 +82,25 @@ export interface BuiltArea {
 const mult = (min: number | null, max: number | null) =>
   min === null && max === null ? '' : `${min ?? 0}..${max === -1 ? '*' : (max ?? '*')}`;
 
+/** One association end's multiplicity (min/max are numbers, opp ends strings). */
+const endMult = (min: number | string | null, max: number | string | null) => {
+  if (min === null && max === null) return '';
+  const hi = max === null || String(max) === '-1' ? '*' : String(max);
+  return `${min ?? 0}..${hi}`;
+};
+
+/** The full association reading: `srcMult src — label → tgtMult tgt`. */
+const assocLine = (
+  src: string,
+  label: string,
+  tgt: string,
+  d: { min: number | null; max: number | null; oppMin: string | null; oppMax: string | null }
+) =>
+  `${[endMult(d.oppMin, d.oppMax), src].filter(Boolean).join(' ')} — ${label} → ` +
+  `${[endMult(d.min, d.max), tgt].filter(Boolean).join(' ')}`;
+
+export { assocLine };
+
 /** Activity tier: how many people populate the hospital. */
 export type PeopleTier = 'off' | 'low' | 'full';
 
@@ -558,9 +577,9 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     const hx = sx * 0.75;
     for (const s of [1, -1] as const) {
       kit.sign(
-        1.3, 0.52, hx, 2.42, z + s * 0.015, s > 0 ? 0 : Math.PI,
+        1.3, 0.56, hx, 2.42, z + s * 0.015, s > 0 ? 0 : Math.PI,
         () =>
-          makeSignTexture({ widthPx: 760, heightPx: 304, title: signTitle, subtitle: signSubtitle, titleSize: 50 }),
+          makeSignTexture({ widthPx: 760, heightPx: 328, title: signTitle, subtitle: signSubtitle, titleSize: 50 }),
         `doorsign:${label}:${s}`
       );
     }
@@ -586,11 +605,11 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
 
   wc.out.forEach((d, i) => {
     const dest = byId.get(d.targetId)?.label ?? '?';
-    addDoor('right', i, 'door-out', d.elementId, d.label, d.targetId, dest, `${d.label} ${mult(d.min, d.max)}`);
+    addDoor('right', i, 'door-out', d.elementId, d.label, d.targetId, dest, assocLine(wc.label, d.label, dest, d));
   });
   wc.in.forEach((d, i) => {
     const src = byId.get(d.sourceId)?.label ?? '?';
-    addDoor('left', i, 'door-in', d.elementId, d.label, d.sourceId, src, `${d.label} ${mult(d.min, d.max)} →`);
+    addDoor('left', i, 'door-in', d.elementId, d.label, d.sourceId, src, assocLine(src, d.label, wc.label, d));
   });
 
   // ---- pictures on the bare walls ---------------------------------------------

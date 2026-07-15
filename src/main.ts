@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { World } from './types';
-import { buildArea, ancestorLevels, type BuiltArea, type Interactable, type PeopleTier } from './world/corridor';
+import { buildArea, ancestorLevels, assocLine, type BuiltArea, type Interactable, type PeopleTier } from './world/corridor';
 import { Walker, personRng } from './world/people';
 import { buildAtrium, ATRIUM_ID } from './world/atrium';
 import { buildStreet, STREET_ID } from './world/street';
@@ -527,13 +527,13 @@ async function boot() {
       const name = (id: string) => esc(byId.get(id)?.label ?? '?');
       if (wc.out.length || wc.self.length) {
         html += `<h3>Doors out (right wall)</h3><ul>${[
-          ...wc.out.map((d) => `<li>${esc(d.label)} → ${name(d.targetId)}</li>`),
+          ...wc.out.map((d) => `<li>${esc(assocLine(wc.label, d.label, byId.get(d.targetId)?.label ?? '?', d))}</li>`),
           ...wc.self.map((d) => `<li>${esc(d.label)} → ${esc(wc.label)} (end wall)</li>`),
         ].join('')}</ul>`;
       }
       if (wc.in.length) {
         html += `<h3>Doors in (left wall)</h3><ul>${wc.in
-          .map((d) => `<li>${name(d.sourceId)} — ${esc(d.label)}</li>`)
+          .map((d) => `<li>${esc(assocLine(byId.get(d.sourceId)?.label ?? '?', d.label, wc.label, d))}</li>`)
           .join('')}</ul>`;
       }
       if (wc.supers.length) html += `<h3>Stairs up</h3><ul>${wc.supers.map((id) => `<li>${name(id)}</li>`).join('')}</ul>`;
