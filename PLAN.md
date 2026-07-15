@@ -185,6 +185,90 @@ MASTER.json ──(build-time pipeline)──▶ world.json ──(runtime gener
 
 **Sequencing note**: Stages 0–2 prove the hard part (graph → space), and Stage 1 already yields a fully navigable model. Look & feel (3) and content (4) are then low-risk, highly visible increments. Each stage ends with something walkable you can show to ContSys colleagues.
 
+### Stage 6 — Postgraduate Medical Centre (lecture theatre) — user suggestion, 15 Jul 2026
+
+A pavilion off Reception, purpose-built as a filming backdrop for video
+presentations (YouTube). Named for the real 1960s NHS innovation: postgraduate
+medical centres were separate pavilion buildings in the hospital grounds —
+exactly what this will be once Stage 7's courtyard wraps around it.
+
+Decisions locked (15 Jul 2026): racetrack donut (not a true circle); theatre
+branded **Postgraduate Medical Centre · Lecture Theatre**; theatre ships first,
+donut second.
+
+- **6a — Shell & siting.** Pavilion ≈ 20 m × 14 m north-east of Reception
+  (roughly x ∈ [−22, −2], z ∈ [19, 33]) — inside the future Stage 7 courtyard,
+  so it never moves. Reached by a door in Reception's north wall into a short
+  glazed link corridor. Surface level only (no basement), so it can never
+  collide with any wing's underground fingers at storeys −1…−7.
+- **6b — Interior.** Entry at the rear-top; raked tiers stepping down ~0.35 m
+  (ground-following handles this; CLIMB is 0.5) to a stage dais; rows of
+  utility chairs at lecture pitch with a central aisle; lectern; 16:9
+  projection screen ≈ 6 m × 3.4 m; NHS-blue proscenium signage; acoustic
+  panels; house-light LED rows. Exterior: brick + curtain-wall glazing, flat
+  roof, entrance canopy, exterior sign.
+- **6c — Slide screen (the point of the room).** `public/slides/manifest.json`
+  lists an ordered deck of images (PNG/JPG exported from PowerPoint) and
+  optional `.mp4` entries (Three.js VideoTexture). Advance/retreat on ←/→ AND
+  PageUp/PageDown — presenter clickers emit PageUp/Down, so a real remote works
+  while filming. Touch: tap the right/left half of the screen. Ships with a
+  default instructional deck ("drop your slides in /slides"). Textures follow
+  the established rules (fixed-size canvas, cover-fit, no NPOT mipmaps).
+- **6d — Filming aids.** **H** toggles all HUD/overlay/touch chrome for a clean
+  recording; **L** dims the theatre house lights (screen reads better on
+  camera); `?start=theatre` URL parameter spawns at the lectern. Audience:
+  people-tier scatter in the raked seating, presenter figure at the lectern.
+- **6e — Integration.** Rows on the Reception directory boards and porter (M)
+  search; **R** reader support; audit gains theatre reachability + collider
+  checks; README gains a "Filming a presentation" section.
+- **Exit criteria**: walk Reception → link → theatre; present a user-supplied
+  deck end-to-end with a clicker; record a clean clip with H (no chrome);
+  audits green.
+
+### Stage 7 — The racetrack donut — user suggestion, 15 Jul 2026
+
+Replace the 644 m linear street with a circulation **loop**: two parallel
+streets (south = today's, north = its mirror) joined by glazed connector
+corridors at each end, wings hanging off the *outside* of each street, and the
+courtyard — lawn, paths, and the Stage 6 pavilion — inside. Worst-case
+walk halves (you go whichever way round is shorter), and the plan is period
+idiom (the "racetrack plan"). Straight, axis-aligned walls throughout: all
+existing collision, batching, audits and wall-content placement keep working.
+
+- **7a — Layout engine.** `computeLayout` assigns each wing a street
+  (`south`/`north`), balancing run lengths (measured split: south ≈
+  mental-object 159 + stative 116 + physical-object 12 ≈ 287 m; north ≈ event
+  125 + time-interval 63 + role 51 + resources 35 ≈ 274 m). North-street wings
+  mirror in z (the existing per-area `flip` generalises to a per-wing mirror —
+  no 90° rotations anywhere). Street separation is **computed from real
+  envelopes**: each wing's courtyard-side underground fingers reach up to
+  ~57 m beyond its street (measured: deepest flipped row 51.4 m + lobby), so
+  v1 separation = maxCourtyardExtent(south) + maxCourtyardExtent(north) +
+  margin. Optimisation (7e) can bias `splitRows` to face *short* corridors
+  toward the courtyard and shrink it to ~60 m.
+- **7b — Loop builder.** `street.ts` becomes a loop builder: the existing
+  street builder parameterised by z-band and mirror, run twice; east and west
+  connector corridors (4 m wide, courtyard glazing on the inner wall); the
+  west connector passes Reception, which keeps its position on the south-west
+  corner. Courtyard exterior: lawn, paved paths (Reception → pavilion →
+  connectors), benches, fog-hazed sky — the street's existing north glazing
+  finally looks onto something real.
+- **7c — App wiring.** Wing origins pick up street assignment + mirror; spawn
+  yaws, HUD membership boxes, VIS-streaming boxes, wayfinding lines and wing
+  signs all derive from layout as now. Loop signage: "← shorter way" hints at
+  each junction based on arc distance.
+- **7d — Audits.** Same-storey overlap check extended across streets
+  (flip-aware rects already exist); per-street interval checks; reachability
+  walks the full loop + courtyard + pavilion; layout report gains the street
+  assignment table and computed separation.
+- **7e — Optional polish.** Rounded (quarter-circle) corners with a small
+  bespoke radial-collision zone at each corner; splitRows courtyard-bias to
+  shrink the lawn; trees.
+- **Exit criteria**: every wing reachable both ways round; audit proves no
+  same-storey clashes across the courtyard; walk time between the two most
+  distant wings measurably ≤ half the linear layout; Stage 6 pavilion
+  untouched.
+
 ---
 
 ## 5. Open design details (can be settled during Stages 1–3)
