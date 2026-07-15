@@ -662,9 +662,15 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     });
   });
   if (!selfCount) {
-    // dead end: a fire exit (period NHS green) rather than a blank wall
-    kit.box(0.08, G.DOOR_H, G.DOOR_W, MAT.door, 0, G.DOOR_H / 2, -length + 0.06, {});
-    kit.doorFurniture('z+', 0, 0, -length + 0.06);
+    // dead end: a double fire exit with panic bars (the old single box had
+    // its width/depth swapped and rendered as a fin — owner spotted it)
+    for (const s of [-1, 1] as const) {
+      const dx = s * 0.44;
+      kit.box(0.85, G.DOOR_H, 0.08, MAT.door, dx, G.DOOR_H / 2, -length + 0.06, {});
+      kit.steelSpec({ w: 0.7, h: 0.05, d: 0.05, x: dx, y: 1.05, z: -length + 0.13 }); // panic bar
+      kit.steelSpec({ w: 0.7, h: 0.22, d: 0.02, x: dx, y: 0.13, z: -length + 0.11 }); // kick plate
+    }
+    kit.steelSpec({ w: 0.04, h: G.DOOR_H, d: 0.03, x: 0, y: G.DOOR_H / 2, z: -length + 0.11 }); // meeting stile
     kit.sign(
       1.1, 0.34, 0, G.DOOR_H + 0.35, -length + 0.07, 0,
       () =>
@@ -1001,18 +1007,73 @@ function buildStairwellAndLanding(
   // passage from the stair foot under the lobby back strip to the landing
   kit.box(pitW, 0.1, G.LOBBY_D - G.PIT_Z1 + 0.1, MAT.floor, (G.PIT_X0 + G.PIT_X1) / 2, -S - 0.05, (G.PIT_Z1 + G.LOBBY_D) / 2, { walkable: true, vinyl: true });
 
-  // shaft walls & rails
+  // shaft walls — painted light, 1960s stairwells weren't dungeon-dark
   const shaftH = S + G.ROOM_H; // full depth wall from pit bottom to lobby ceiling
-  kit.box(0.1, shaftH, G.LOBBY_D - G.PIT_Z0, MAT.stairDark, G.PIT_X0 - 0.05, -S + shaftH / 2 - G.ROOM_H, (G.PIT_Z0 + G.LOBBY_D) / 2); // west side (under lobby wall)
-  kit.box(0.1, S, G.PIT_Z1 - G.PIT_Z0, MAT.stairDark, G.PIT_X1 + 0.05, -S / 2, (G.PIT_Z0 + G.PIT_Z1) / 2); // east side below floor
-  kit.box(0.1, S, G.LOBBY_D - G.PIT_Z1, MAT.stairDark, G.PIT_X1 + 0.05, -S / 2, (G.PIT_Z1 + G.LOBBY_D) / 2); // passage east wall
-  kit.box(pitW + 0.2, S, 0.1, MAT.stairDark, (G.PIT_X0 + G.PIT_X1) / 2, -S / 2, G.PIT_Z0 - 0.05); // south end
-  // divider between the two flights (from pit bottom up to a lobby-level rail)
-  kit.box(0.09, S + 0.9, G.PIT_Z1 - G.PIT_Z0 - 0.8, MAT.rail, (G.PIT_X0 + G.PIT_X1) / 2, (0.9 - S) / 2, (G.PIT_Z0 + 0.8 + G.PIT_Z1) / 2);
-  // lobby-level guard rails: east edge, south edge, and north edge east lane
-  kit.box(0.08, 0.9, G.PIT_Z1 - G.PIT_Z0, MAT.rail, G.PIT_X1 + 0.04, 0.45, (G.PIT_Z0 + G.PIT_Z1) / 2);
-  kit.box(pitW, 0.9, 0.08, MAT.rail, (G.PIT_X0 + G.PIT_X1) / 2, 0.45, G.PIT_Z0 - 0.04);
-  kit.box(laneW + 0.2, 0.9, 0.08, MAT.rail, eastLaneC, 0.45, G.PIT_Z1 + 0.04); // entry stays open on the west lane
+  kit.box(0.1, shaftH, G.LOBBY_D - G.PIT_Z0, MAT.wall, G.PIT_X0 - 0.05, -S + shaftH / 2 - G.ROOM_H, (G.PIT_Z0 + G.LOBBY_D) / 2); // west side (under lobby wall)
+  kit.box(0.1, S, G.PIT_Z1 - G.PIT_Z0, MAT.wall, G.PIT_X1 + 0.05, -S / 2, (G.PIT_Z0 + G.PIT_Z1) / 2); // east side below floor
+  kit.box(0.1, S, G.LOBBY_D - G.PIT_Z1, MAT.wall, G.PIT_X1 + 0.05, -S / 2, (G.PIT_Z1 + G.LOBBY_D) / 2); // passage east wall
+  kit.box(pitW + 0.2, S, 0.1, MAT.wall, (G.PIT_X0 + G.PIT_X1) / 2, -S / 2, G.PIT_Z0 - 0.05); // south end
+
+  // ---- open timber banisters (period 1960s — no solid panels) --------------
+  // Each run is an oak handrail with slim balusters; an invisible collider
+  // over the same volume still keeps everyone out of the well.
+  const guard = (x0: number, z0: number, x1: number, z1: number, yBase: number) => {
+    const alongX = Math.abs(x1 - x0) > Math.abs(z1 - z0);
+    const len = alongX ? x1 - x0 : z1 - z0;
+    kit.oakSpec({
+      w: alongX ? len : 0.06,
+      h: 0.06,
+      d: alongX ? 0.06 : len,
+      x: (x0 + x1) / 2,
+      y: yBase + 0.87,
+      z: (z0 + z1) / 2,
+    });
+    for (let t = 0.15; t < len; t += 0.3) {
+      kit.oakSpec({
+        w: 0.035,
+        h: 0.84,
+        d: 0.035,
+        x: alongX ? x0 + t : x0,
+        y: yBase + 0.42,
+        z: alongX ? z0 : z0 + t,
+      });
+    }
+    kit.colliders.push(
+      new THREE.Box3().setFromPoints([
+        kit.local(Math.min(x0, x1) - 0.05, yBase, Math.min(z0, z1) - 0.05),
+        kit.local(Math.max(x0, x1) + 0.05, yBase + 0.95, Math.max(z0, z1) + 0.05),
+      ])
+    );
+  };
+  // lobby-level guards: east edge, south edge, and the east lane's north edge
+  guard(G.PIT_X1 + 0.04, G.PIT_Z0, G.PIT_X1 + 0.04, G.PIT_Z1, 0);
+  guard(G.PIT_X0, G.PIT_Z0 - 0.04, G.PIT_X1, G.PIT_Z0 - 0.04, 0);
+  guard(G.PIT_X1 - laneW - 0.2, G.PIT_Z1 + 0.04, G.PIT_X1, G.PIT_Z1 + 0.04, 0); // entry stays open on the west lane
+  // centre well screen between the flights: stepped rails follow each flight
+  // down, tall balusters span the open well — light where the wall was solid
+  {
+    const cx = (G.PIT_X0 + G.PIT_X1) / 2;
+    const segN = 6;
+    const segD = run / segN;
+    for (let k = 0; k < segN; k++) {
+      const zc = G.PIT_Z1 - (k + 0.5) * segD;
+      const f = (k + 0.5) / segN;
+      const yA = -(S / 2) * f + 0.87; // flight A handrail (upper)
+      const yB = -S + (S / 2) * f + 0.87; // flight B handrail (lower)
+      kit.oakSpec({ w: 0.07, h: 0.06, d: segD, x: cx, y: yA, z: zc });
+      kit.oakSpec({ w: 0.07, h: 0.06, d: segD, x: cx, y: yB, z: zc });
+      for (const bz of [zc - segD / 4, zc + segD / 4]) {
+        const bot = yB - 0.85;
+        kit.oakSpec({ w: 0.035, h: yA - bot, d: 0.035, x: cx, y: (yA + bot) / 2, z: bz });
+      }
+    }
+    kit.colliders.push(
+      new THREE.Box3().setFromPoints([
+        kit.local(cx - 0.06, -S, G.PIT_Z0 + 0.8),
+        kit.local(cx + 0.06, 0.9, G.PIT_Z1),
+      ])
+    );
+  }
 
   // ---- the landing (one storey down, z ∈ [7,10], spanning the children) ------
   // World x → parent-local x must respect the parent's flip: mirrored wings
