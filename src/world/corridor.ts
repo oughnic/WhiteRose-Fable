@@ -1255,13 +1255,15 @@ export function hangPicture(
   const nx = Math.sin(rotY);
   const nz = Math.cos(rotY);
   const xFacing = Math.abs(nx) > 0.5;
+  // the frame hugs the picture (6 mm reveal) with a wide border — sunk any
+  // deeper and the picture occludes its own frame at grazing angles
   kit.oakSpec({
-    w: xFacing ? 0.05 : 1.36,
-    h: 1.02,
-    d: xFacing ? 1.36 : 0.05,
-    x: x - nx * 0.045,
+    w: xFacing ? 0.05 : 1.42,
+    h: 1.08,
+    d: xFacing ? 1.42 : 0.05,
+    x: x - nx * 0.031,
     y,
-    z: z - nz * 0.045,
+    z: z - nz * 0.031,
   });
   kit.sign(
     1.28, 0.94, x, y, z, rotY,
