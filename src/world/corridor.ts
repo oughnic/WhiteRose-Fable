@@ -28,6 +28,9 @@ export { MAT };
 /** The reception atrium's area id (lives here so the lift boards can target it). */
 export const ATRIUM_ID = '__atrium';
 
+/** The 5 mm core of double-sided hanging signs — its rim reads as the edge. */
+const MAT_SIGN_EDGE = new THREE.MeshBasicMaterial({ color: 0x00417f });
+
 export type InteractKind = 'door-out' | 'door-in' | 'door-self' | 'stair-up' | 'stair-down' | 'lift';
 
 export interface Interactable {
@@ -404,9 +407,10 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   // would share a plane and z-fight; offsetting sideways from the door centre
   // separates facing pairs (the flip sends them opposite ways in world space)
   const hangX = isRoot ? 0 : 0.4;
+  kit.box(0.006, 0.44, 1.6, MAT_SIGN_EDGE, hangX, plateY, LD + 1.35, {});
   for (const s of [1, -1] as const) {
     kit.sign(
-      1.6, 0.44, hangX + s * 0.015, plateY, LD + 1.35, (s * Math.PI) / 2,
+      1.6, 0.44, hangX + s * 0.0035, plateY, LD + 1.35, (s * Math.PI) / 2,
       () =>
         makeSignTexture({
           widthPx: 800,
@@ -579,9 +583,10 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     // walking either way: destination concept as the heading, the association
     // and its multiplicity below (owner request, 15 Jul 2026)
     const hx = sx * 0.75;
+    kit.box(1.3, 0.56, 0.006, MAT_SIGN_EDGE, hx, 2.42, z, {});
     for (const s of [1, -1] as const) {
       kit.sign(
-        1.3, 0.56, hx, 2.42, z + s * 0.015, s > 0 ? 0 : Math.PI,
+        1.3, 0.56, hx, 2.42, z + s * 0.0035, s > 0 ? 0 : Math.PI,
         () =>
           makeSignTexture({ widthPx: 760, heightPx: 328, title: signTitle, subtitle: signSubtitle, titleSize: 50 }),
         `doorsign:${label}:${s}`
@@ -1022,6 +1027,11 @@ function buildStairwellAndLanding(
     const sofZ = (G.PIT_Z0 + HALF + G.PIT_Z1) / 2;
     kit.oakSpec({ w: laneW + 0.05, h: 0.06, d: sofLen, x: westLaneC, y: -S / 4 - 0.22, z: sofZ, rx: -pitch2 });
     kit.oakSpec({ w: laneW + 0.05, h: 0.06, d: sofLen, x: eastLaneC, y: (-3 * S) / 4 - 0.22, z: sofZ, rx: pitch2 });
+    // closed strings along the well side of each flight: the structure the
+    // treads sit on, and what the centre balusters land on — nothing floats
+    const cx2 = (G.PIT_X0 + G.PIT_X1) / 2;
+    kit.oakSpec({ w: 0.24, h: 0.34, d: sofLen, x: cx2, y: -S / 4 - 0.12, z: sofZ, rx: -pitch2 });
+    kit.oakSpec({ w: 0.24, h: 0.34, d: sofLen, x: cx2, y: (-3 * S) / 4 - 0.12, z: sofZ, rx: pitch2 });
   }
 
   // shaft walls — painted light, 1960s stairwells weren't dungeon-dark

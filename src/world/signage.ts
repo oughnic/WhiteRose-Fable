@@ -63,7 +63,24 @@ export function makeSignTexture(spec: SignSpec): THREE.CanvasTexture {
   ctx.textBaseline = 'top';
 
   let y = pad;
-  const titleSize = spec.titleSize ?? Math.round(spec.heightPx * 0.28);
+  let titleSize = spec.titleSize ?? Math.round(spec.heightPx * 0.28);
+  let subSize = spec.subtitleSize ?? Math.round(titleSize * 0.55);
+  // shrink to fit: wrapped title + subtitle must never run off the canvas
+  // (body signs manage their own space via fitBody)
+  if (!spec.body) {
+    const subRatio = subSize / titleSize;
+    for (let guard = 0; guard < 24 && titleSize > 18; guard++) {
+      ctx.font = `bold ${titleSize}px Arial`;
+      let need = wrap(ctx, spec.title, spec.widthPx - pad * 2).length * titleSize * 1.15;
+      if (spec.subtitle) {
+        ctx.font = `${subSize}px Arial`;
+        need += wrap(ctx, spec.subtitle, spec.widthPx - pad * 2).length * subSize * 1.2;
+      }
+      if (need <= spec.heightPx - pad * 1.6) break;
+      titleSize = Math.round(titleSize * 0.93);
+      subSize = Math.max(14, Math.round(titleSize * subRatio));
+    }
+  }
   ctx.font = `bold ${titleSize}px Arial`;
   for (const line of wrap(ctx, spec.title, spec.widthPx - pad * 2)) {
     ctx.fillText(line, x, y);
@@ -71,12 +88,11 @@ export function makeSignTexture(spec: SignSpec): THREE.CanvasTexture {
   }
 
   if (spec.subtitle) {
-    const s = spec.subtitleSize ?? Math.round(titleSize * 0.55);
-    ctx.font = `${s}px Arial`;
+    ctx.font = `${subSize}px Arial`;
     ctx.globalAlpha = 0.85;
     for (const line of wrap(ctx, spec.subtitle, spec.widthPx - pad * 2)) {
       ctx.fillText(line, x, y);
-      y += s * 1.2;
+      y += subSize * 1.2;
     }
     ctx.globalAlpha = 1;
   }
