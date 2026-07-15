@@ -400,9 +400,13 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   // walk direction — the concept is readable from a distance
   const hangH = isRoot ? G.STREET_H : G.ROOM_H;
   const plateY = isRoot ? 2.7 : 2.4;
+  // landing lobbies face each other across a 3 m landing, so their hung signs
+  // would share a plane and z-fight; offsetting sideways from the door centre
+  // separates facing pairs (the flip sends them opposite ways in world space)
+  const hangX = isRoot ? 0 : 0.4;
   for (const s of [1, -1] as const) {
     kit.sign(
-      1.6, 0.44, s * 0.015, plateY, LD + 1.35, (s * Math.PI) / 2,
+      1.6, 0.44, hangX + s * 0.015, plateY, LD + 1.35, (s * Math.PI) / 2,
       () =>
         makeSignTexture({
           widthPx: 800,
@@ -414,7 +418,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       `hang:${wc.label}:${s}`
     );
   }
-  for (const rx of [-0.6, 0.6]) {
+  for (const rx of [hangX - 0.6, hangX + 0.6]) {
     kit.steelSpec({ w: 0.03, h: hangH - plateY - 0.22, d: 0.03, x: rx, y: (hangH + plateY + 0.22) / 2, z: LD + 1.35 });
   }
 
@@ -993,16 +997,17 @@ function buildStairwellAndLanding(
   void westX;
 
   // flight A (west lane): descends from the lobby (z=PIT_Z1) north→south
+  // — oak treads throughout, matching the banisters
   for (let t = 0; t < nT; t++) {
     const topY = -((t + 1) * (S / 2)) / nT;
-    kit.box(laneW, 0.09, going + 0.02, MAT.stair, westLaneC, topY - 0.045, G.PIT_Z1 - (t + 0.5) * going, { walkable: true });
+    kit.box(laneW, 0.09, going + 0.02, MAT.oak, westLaneC, topY - 0.045, G.PIT_Z1 - (t + 0.5) * going, { walkable: true });
   }
   // half landing at the south end
-  kit.box(pitW, 0.1, HALF, MAT.stair, (G.PIT_X0 + G.PIT_X1) / 2, -S / 2 - 0.05, G.PIT_Z0 + HALF / 2, { walkable: true });
+  kit.box(pitW, 0.1, HALF, MAT.oak, (G.PIT_X0 + G.PIT_X1) / 2, -S / 2 - 0.05, G.PIT_Z0 + HALF / 2, { walkable: true });
   // flight B (east lane): descends south→north to one storey down
   for (let t = 0; t < nT; t++) {
     const topY = -S / 2 - ((t + 1) * (S / 2)) / nT;
-    kit.box(laneW, 0.09, going + 0.02, MAT.stair, eastLaneC, topY - 0.045, G.PIT_Z0 + HALF + (t + 0.5) * going, { walkable: true });
+    kit.box(laneW, 0.09, going + 0.02, MAT.oak, eastLaneC, topY - 0.045, G.PIT_Z0 + HALF + (t + 0.5) * going, { walkable: true });
   }
   // passage from the stair foot under the lobby back strip to the landing
   kit.box(pitW, 0.1, G.LOBBY_D - G.PIT_Z1 + 0.1, MAT.floor, (G.PIT_X0 + G.PIT_X1) / 2, -S - 0.05, (G.PIT_Z1 + G.LOBBY_D) / 2, { walkable: true, vinyl: true });
