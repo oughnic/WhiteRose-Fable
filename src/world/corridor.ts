@@ -1011,6 +1011,18 @@ function buildStairwellAndLanding(
   }
   // passage from the stair foot under the lobby back strip to the landing
   kit.box(pitW, 0.1, G.LOBBY_D - G.PIT_Z1 + 0.1, MAT.floor, (G.PIT_X0 + G.PIT_X1) / 2, -S - 0.05, (G.PIT_Z1 + G.LOBBY_D) / 2, { walkable: true, vinyl: true });
+  // pit-bottom floor under the flights — the open balustrade made the void
+  // beneath the stairs visible (owner screenshot)
+  kit.box(pitW + 0.2, 0.1, G.PIT_Z1 - G.PIT_Z0 + 0.1, MAT.floor, (G.PIT_X0 + G.PIT_X1) / 2, -S - 0.05, (G.PIT_Z0 + G.PIT_Z1) / 2, { walkable: true, vinyl: true });
+  // painted soffits close the flights' undersides (open risers otherwise
+  // show sky between the treads from below)
+  {
+    const pitch2 = Math.atan2(S / 2, G.PIT_Z1 - G.PIT_Z0 - HALF);
+    const sofLen = Math.hypot(G.PIT_Z1 - G.PIT_Z0 - HALF, S / 2) + 0.1;
+    const sofZ = (G.PIT_Z0 + HALF + G.PIT_Z1) / 2;
+    kit.oakSpec({ w: laneW + 0.05, h: 0.06, d: sofLen, x: westLaneC, y: -S / 4 - 0.22, z: sofZ, rx: -pitch2 });
+    kit.oakSpec({ w: laneW + 0.05, h: 0.06, d: sofLen, x: eastLaneC, y: (-3 * S) / 4 - 0.22, z: sofZ, rx: pitch2 });
+  }
 
   // shaft walls — painted light, 1960s stairwells weren't dungeon-dark
   const shaftH = S + G.ROOM_H; // full depth wall from pit bottom to lobby ceiling
