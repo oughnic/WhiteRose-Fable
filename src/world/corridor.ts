@@ -1047,9 +1047,11 @@ function buildStairwellAndLanding(
     );
   };
   // lobby-level guards: east edge, south edge, and the east lane's north edge
-  guard(G.PIT_X1 + 0.04, G.PIT_Z0, G.PIT_X1 + 0.04, G.PIT_Z1, 0);
-  guard(G.PIT_X0, G.PIT_Z0 - 0.04, G.PIT_X1, G.PIT_Z0 - 0.04, 0);
-  guard(G.PIT_X1 - laneW - 0.2, G.PIT_Z1 + 0.04, G.PIT_X1, G.PIT_Z1 + 0.04, 0); // entry stays open on the west lane
+  // (each extended a touch past the corner so the rails overlap and read as
+  // one continuous run)
+  guard(G.PIT_X1 + 0.04, G.PIT_Z0 - 0.07, G.PIT_X1 + 0.04, G.PIT_Z1 + 0.07, 0);
+  guard(G.PIT_X0, G.PIT_Z0 - 0.04, G.PIT_X1 + 0.07, G.PIT_Z0 - 0.04, 0);
+  guard(G.PIT_X1 - laneW - 0.2, G.PIT_Z1 + 0.04, G.PIT_X1 + 0.07, G.PIT_Z1 + 0.04, 0); // entry stays open on the west lane
   // centre well balustrade: continuous handrails at trolley-rail height,
   // sloping at the pitch of the stairs — one following each flight down,
   // meeting at the half landing, with vertical balusters onto the treads
@@ -1069,6 +1071,19 @@ function buildStairwellAndLanding(
     // wall-side handrails on each lane's outer wall, same pitch
     rail(G.PIT_X0 + 0.08, RAIL_Y - S / 4, -pitch);
     rail(G.PIT_X1 - 0.08, RAIL_Y - (3 * S) / 4, pitch);
+    // level easings bridge every sloped end so the rail reads as one
+    // continuous flow — top of flight, half-landing turn, stair foot
+    const easing = (x: number, y: number, z: number) => kit.oakSpec({ w: 0.07, h: 0.07, d: 0.4, x, y, z });
+    easing(cx, RAIL_Y, zTop - 0.08); // meets the lobby guard rail
+    easing(cx, RAIL_Y - S / 2, zBot + 0.02); // the turn: joins both flights' rails
+    easing(cx, RAIL_Y - S, zTop - 0.08); // stair foot
+    easing(G.PIT_X0 + 0.08, RAIL_Y, zTop - 0.08);
+    easing(G.PIT_X0 + 0.08, RAIL_Y - S / 2, zBot + 0.02);
+    easing(G.PIT_X1 - 0.08, RAIL_Y - S / 2, zBot + 0.02);
+    easing(G.PIT_X1 - 0.08, RAIL_Y - S, zTop - 0.08);
+    // newel posts anchor the open ends of the centre balustrade
+    kit.oakSpec({ w: 0.09, h: RAIL_Y + 0.12, d: 0.09, x: cx, y: -S / 2 + (RAIL_Y + 0.12) / 2, z: zBot - 0.16 });
+    kit.oakSpec({ w: 0.09, h: RAIL_Y + 0.12, d: 0.09, x: cx, y: -S + (RAIL_Y + 0.12) / 2, z: zTop + 0.08 });
     // balusters: verticals from each centre rail down to its flight
     // (flight B slopes the opposite way — its own rail line, not A's)
     const yBAt = (z: number) => RAIL_Y - S + (S / 2) * ((zTop - z) / run);
