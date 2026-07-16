@@ -158,12 +158,19 @@ export function makeNoticeTexture(header: string, headerColor: string, body: str
   ctx.fillText(header, 30, 48);
   ctx.textBaseline = 'top';
   ctx.fillStyle = '#20262b';
-  ctx.font = '34px Arial';
+  // shrink to fit: pick the largest size whose wrapped text fits the card
+  let s = 34;
+  while (s > 16) {
+    ctx.font = `${s}px Arial`;
+    if (wrap(ctx, body, 560).length * s * 1.35 <= 810 - 130 - 25) break;
+    s -= 2;
+  }
+  ctx.font = `${s}px Arial`;
   let y = 130;
   for (const line of wrap(ctx, body, 560)) {
     ctx.fillText(line, 30, y);
-    y += 46;
-    if (y > 770) break; // very long notes are truncated on the card
+    y += s * 1.35;
+    if (y > 810 - 40) break; // beyond even 16 px — truncate as a last resort
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 4;
