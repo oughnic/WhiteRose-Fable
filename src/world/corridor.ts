@@ -1218,7 +1218,8 @@ function buildStairwellAndLanding(
     while (x <= lx1 - 0.9 && !slotClear(x)) x += 0.1;
     if (x <= lx1 - 0.9) {
       takenX.push(x);
-      kit.box(0.08, G.DOOR_H, G.DOOR_W, MAT.door, x, y + G.DOOR_H / 2, G.LANDING_Z1 - 0.05, {});
+      // slab lies flat against the z-facing wall (w × h × thin)
+      kit.box(G.DOOR_W, G.DOOR_H, 0.08, MAT.door, x, y + G.DOOR_H / 2, G.LANDING_Z1 - 0.05, {});
       kit.doorFurniture('z-', x, y, G.LANDING_Z1 - 0.05);
       kit.sign(1.5, 0.45, x, y + G.DOOR_H + 0.45, G.LANDING_Z1 - 0.09, Math.PI, portalSign(c), `downportal:${c?.label}`);
       interactables.push({
