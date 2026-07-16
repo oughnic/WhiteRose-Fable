@@ -142,7 +142,8 @@ for (const l of Object.values(layout.landings)) {
   // end-cap walls extend 0.075 beyond the span — pad by exactly that; the
   // z band is exact since lobbies now adjoin on BOTH sides (double-loaded)
   const K = layout.loop.K;
-  const lz = l.mirror ? [K - G.LANDING_Z1, K - G.LANDING_Z0] : [G.LANDING_Z0, G.LANDING_Z1];
+  const dz = l.dz ?? 0;
+  const lz = l.mirror ? [K - G.LANDING_Z1, K - G.LANDING_Z0] : [G.LANDING_Z0 + dz, G.LANDING_Z1 + dz];
   addRect(l.level, l.x0 - 0.08, l.x1 + 0.08, lz[0], lz[1], `${p.label} landing`);
   // the stair shaft + passage occupy the child storey inside the reserved
   // slot — flipped (mirrored-wing) parents reflect the pit in x and z
@@ -172,7 +173,7 @@ if (!overlapFails) pass(`no same-storey overlaps across ${rectsByLevel.size} lev
 // wing street intervals disjoint — per street side (the racetrack's two
 // streets may overlap in x by design; only same-street overlap is a fault)
 let wingsOk = true;
-for (const side of ['south', 'north']) {
+for (const side of ['south', 'north', 'gallery']) {
   const sorted = layout.wings.filter((w) => w.street === side).sort((a, b) => a.x0 - b.x0);
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i].x0 < sorted[i - 1].x1) {

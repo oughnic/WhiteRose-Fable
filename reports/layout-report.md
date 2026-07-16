@@ -1,15 +1,15 @@
 # Layout report (Stages 2 + 7)
 
-Racetrack loop: two streets of 395 m joined by two glazed
-cloisters across a 37 m courtyard (computed from the real underground
+Racetrack loop: two streets of 329 m joined by two glazed
+cloisters across a 49 m courtyard (computed from the real underground
 envelopes so no same-storey clash is possible; verified above).
 
 | Street | Wings (west→east) |
 |---|---|
-| south | authorization-by-law (8 m), care-commitment (8 m), care-employment (8 m), care-mandate (36 m), care-plan (20 m), care-process (12 m), event (125 m), health-matter (82 m) |
-| north | health-related-period (59 m), health-state (12 m), knowledge (87 m), resources (44 m), role (59 m), shareable-data-repository (12 m), social-environment (8 m) |
+| south | event (125 m), mental-object (180 m) |
+| north | process (12 m), role (59 m), state (102 m), time-interval (59 m) |
 
-Real stairwells + landings: 48
+Real stairwells + landings: 51
 Deepest storey: level −5
 
 ## Edges on portal fallbacks (by design: association doors are portals; listed
@@ -27,10 +27,10 @@ Deepest storey: level −5
 
 ### Subtypes homed under another parent (8)
 - care mandate —↓→ informed consent  (subtype homed elsewhere)
+- care actor —↓→ care personnel  (subtype homed elsewhere)
+- role —↓→ subject of care  (subtype homed elsewhere)
 - health issue —↓→ clinical issue  (subtype homed elsewhere)
 - care activity delay —↓→ health condition delay  (subtype homed elsewhere)
 - care resource —↓→ care personnel  (subtype homed elsewhere)
-- care actor —↓→ care personnel  (subtype homed elsewhere)
-- role —↓→ subject of care  (subtype homed elsewhere)
 - observed condition —↓→ professionally assessed condition  (no home children — lobby portal door)
 - social matter —↓→ social issue  (no home children — lobby portal door)

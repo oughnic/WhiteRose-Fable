@@ -100,7 +100,25 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
   // ---- hall shell -----------------------------------------------------------
   const wallH = ROOF + 2.4; // reaches from below the sunken pit to the ceiling
   const wallY = ROOF - wallH / 2;
-  kit.box(0.15, wallH, Z1 - Z0, wallMat, X0 - 0.075, wallY, CZ, { solid: true }); // west
+  // west wall, with the rear-aisle doorway to the Reference Gallery (z 19.4–21)
+  const GZ0 = 19.4;
+  const GZ1 = 21.0;
+  kit.box(0.15, wallH, GZ0 - Z0, wallMat, X0 - 0.075, wallY, (Z0 + GZ0) / 2, { solid: true });
+  kit.box(0.15, wallH, Z1 - GZ1, wallMat, X0 - 0.075, wallY, (GZ1 + Z1) / 2, { solid: true });
+  kit.box(0.15, ROOF - 2.3, GZ1 - GZ0, wallMat, X0 - 0.075, (ROOF + 2.3) / 2, (GZ0 + GZ1) / 2, {}); // header
+  kit.box(0.15, 2.4, GZ1 - GZ0, wallMat, X0 - 0.075, -1.2, (GZ0 + GZ1) / 2, { solid: true }); // below aisle level
+  kit.sign(
+    1.9, 0.5, X0 + 0.09, 2.55, (GZ0 + GZ1) / 2, Math.PI / 2,
+    () =>
+      makeSignTexture({
+        widthPx: 960,
+        heightPx: 250,
+        title: '← Reference Gallery',
+        subtitle: 'clause 3.1 definitions · resources annex',
+        titleSize: 64,
+      }),
+    'to-gallery'
+  );
   kit.box(0.15, wallH, Z1 - Z0, wallMat, X1 + 0.075, wallY, CZ, { solid: true }); // east
   kit.box(X1 - X0 + 0.3, wallH, 0.15, wallMat, CX, wallY, Z1 + 0.075, { solid: true }); // north (screen wall)
   // south wall with the 2 m entry aperture at the link
@@ -185,7 +203,10 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
   }
 
   // ---- exterior: brick skin, flat roof, lawn (seen from the glazed link) ---
-  kit.box(0.12, 7, Z1 - Z0 + 0.3, brickMat, X0 - 0.21, 1.0, CZ, {});
+  kit.box(0.12, 7, GZ0 - (Z0 - 0.15), brickMat, X0 - 0.21, 1.0, (Z0 - 0.15 + GZ0) / 2, {});
+  kit.box(0.12, 7, Z1 + 0.15 - GZ1, brickMat, X0 - 0.21, 1.0, (GZ1 + Z1 + 0.15) / 2, {});
+  kit.box(0.12, 2.2, GZ1 - GZ0, brickMat, X0 - 0.21, 3.4, (GZ0 + GZ1) / 2, {}); // over the gallery link
+  kit.box(0.12, 2.5, GZ1 - GZ0, brickMat, X0 - 0.21, -1.25, (GZ0 + GZ1) / 2, {}); // below it
   kit.box(0.12, 7, Z1 - Z0 + 0.3, brickMat, X1 + 0.21, 1.0, CZ, {});
   kit.box(X1 - X0 + 0.7, 7, 0.12, brickMat, CX, 1.0, Z1 + 0.21, {});
   kit.box(-16.6 - (X0 - 0.35), 7, 0.12, brickMat, (X0 - 0.35 + -16.6) / 2, 1.0, Z0 - 0.21, {});

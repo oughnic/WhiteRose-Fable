@@ -47,6 +47,8 @@ export interface Wing {
   key: string;
   label: string;
   annex: boolean;
+  /** Annexes hang off the Postgraduate Medical Centre; wings off the street loop. */
+  zone: 'street' | 'gallery';
   rootIds: string[];
   classCount: number;
 }

@@ -57,6 +57,8 @@ export interface LandingPlacement {
   stairX: number;
   /** True when the parent wing is mirrored onto the north street. */
   mirror?: boolean;
+  /** z offset for gallery-zone wings (0 for street wings). */
+  dz?: number;
   homeChildIds: string[];
   southIds: string[];
   northIds: string[];
@@ -68,7 +70,7 @@ export interface WingPlacement {
   x0: number;
   x1: number;
   rootIds: string[];
-  street: 'south' | 'north';
+  street: 'south' | 'north' | 'gallery';
 }
 
 export interface LoopPlacement {
@@ -80,6 +82,8 @@ export interface LoopPlacement {
   south: { z0: number; z1: number };
   north: { z0: number; z1: number };
   connectors: { west: [number, number]; east: [number, number] };
+  /** The Reference/Resources gallery west of the Postgraduate Medical Centre. */
+  gallery: { x0: number; x1: number; z0: number; z1: number; dz: number; entrance: [number, number] };
 }
 
 export interface Layout {

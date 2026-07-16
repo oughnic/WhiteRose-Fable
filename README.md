@@ -99,7 +99,7 @@ just a commit.
 
 - [x] Data pipeline with the definitional filter (drop `thing` + clause 3.1 except
       *event*, *role*, *knowledge*; contract inheritance through dropped classes)
-- [x] All 161 areas walkable: outbound association doors on the right, inbound on
+- [x] Every concept area walkable (172 with the Reference collection): outbound association doors on the right, inbound on
       the left, self-references ("pig's ears") at the corridor end
 - [x] Lift destination boards (upper superclasses at the top, subtypes below,
       Reception at ground); porter search (M); full A–Z directory

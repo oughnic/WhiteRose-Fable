@@ -176,10 +176,11 @@ export function computeLayout(world) {
   // courtyard. Wings are assigned in order (preserving the west→east reading)
   // to the south street until half the total width is placed, the rest north.
   const wingWidth = (w) => w.rootIds.reduce((n, r) => n + stripWidth(r), 0);
-  const total = world.wings.reduce((n, w) => n + wingWidth(w), 0);
+  const streetWings = world.wings.filter((w) => w.zone !== 'gallery');
+  const total = streetWings.reduce((n, w) => n + wingWidth(w), 0);
   let southSum = 0;
   const streetOf = new Map();
-  for (const w of world.wings) {
+  for (const w of streetWings) {
     const south = southSum < total / 2;
     streetOf.set(w.key, south ? 'south' : 'north');
     if (south) southSum += wingWidth(w);
@@ -187,7 +188,7 @@ export function computeLayout(world) {
 
   const wings = [];
   const cursors = { south: 6, north: 6 }; // both streets start at x=0 + margin
-  for (const wing of world.wings) {
+  for (const wing of streetWings) {
     const street = streetOf.get(wing.key);
     const start = cursors[street];
     for (const rootId of wing.rootIds) {
@@ -198,6 +199,26 @@ export function computeLayout(world) {
     cursors[street] += G.WING_GAP;
   }
   const xEnd = Math.max(cursors.south, cursors.north) - G.WING_GAP + 6;
+
+  // Gallery annexes (Reference collection, Resources) pack on their own
+  // street line west of the Postgraduate Medical Centre, reached from its
+  // rear aisle — root lobbies open off the gallery's south side.
+  const GALLERY_DZ = 30.5; // gallery band z ∈ [37.5, 41.5]
+  const GALLERY_X1 = -30; // lobby run ends here; the entrance zone lies to the east
+  const galleryWings = world.wings.filter((w) => w.zone === 'gallery');
+  const gTotal = galleryWings.reduce((n, w) => n + wingWidth(w) + G.WING_GAP, 0);
+  let gcur = GALLERY_X1 - gTotal;
+  const gx0 = gcur;
+  for (const wing of galleryWings) {
+    const start = gcur;
+    for (const rootId of wing.rootIds) {
+      place(rootId, gcur, 0);
+      gcur += stripWidth(rootId);
+    }
+    wings.push({ key: wing.key, x0: start, x1: gcur, rootIds: wing.rootIds, street: 'gallery' });
+    gcur += G.WING_GAP;
+  }
+  const galleryKeys = new Set(galleryWings.map((w) => w.key));
 
   // Mirror each north-street wing 180° in plan: x reflects about the wing's
   // own centre and every area's flip toggles (reflect-x + reflect-z = a
@@ -257,6 +278,11 @@ export function computeLayout(world) {
     const a = areas[c.id];
     a.mirror = !!a.mirror;
     a.oz = a.mirror ? (a.flip ? K : K - 17) : a.flip ? 17 : 0;
+    if (galleryKeys.has(c.wing)) a.oz += GALLERY_DZ;
+  }
+  const wingOfClass = new Map(world.classes.map((c) => [c.id, c.wing]));
+  for (const l of Object.values(landings)) {
+    l.dz = galleryKeys.has(wingOfClass.get(l.parentId)) ? GALLERY_DZ : 0;
   }
 
   const nonPrimaryUp = [];
@@ -278,6 +304,14 @@ export function computeLayout(world) {
       south: { z0: G.STREET_Z0, z1: G.STREET_Z1 },
       north: { z0: G.STREET_Z1 + C, z1: G.STREET_Z1 + C + 4 },
       connectors: { west: [0.2, 3.8], east: [xEnd - 3.8, xEnd - 0.2] },
+      gallery: {
+        x0: gx0 - 2,
+        x1: -25.6,
+        z0: G.STREET_Z0 + GALLERY_DZ,
+        z1: G.STREET_Z1 + GALLERY_DZ,
+        dz: GALLERY_DZ,
+        entrance: [-28.4, -25.9],
+      },
     },
   };
 }

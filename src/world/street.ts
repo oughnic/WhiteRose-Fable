@@ -194,6 +194,7 @@ export function buildStreet(
   let kS = 0;
   let kN = 0;
   for (const w of layout.wings) {
+    if (w.street === 'gallery') continue; // the annexes are reached via the PMC
     const lineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(wingColor(w.key)) });
     const doorX = layout.areas[w.rootIds[0]].x;
     if (w.street === 'south') {

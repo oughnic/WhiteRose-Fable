@@ -5,6 +5,7 @@ import { Walker, personRng } from './world/people';
 import { buildAtrium, ATRIUM_ID } from './world/atrium';
 import { buildStreet, STREET_ID } from './world/street';
 import { buildTheatre, THEATRE_ID } from './world/theatre';
+import { buildGallery, GALLERY_ID } from './world/gallery';
 import { SlideDeck } from './world/slides';
 import { SignManager, type ArtEntry } from './world/signage';
 import { wingColor } from './world/colors';
@@ -110,6 +111,8 @@ async function boot() {
   areas.set(street.id, street);
   const theatre = buildTheatre(signs, art, people);
   areas.set(theatre.id, theatre);
+  const gallery = buildGallery(world, layout, signs, art, people);
+  areas.set(gallery.id, gallery);
   const deck = new SlideDeck(theatre.screen);
   void deck.load();
   for (const wc of world.classes) {
@@ -176,7 +179,7 @@ async function boot() {
         if (l.x1 - l.x0 < 18 || n >= 12) continue;
         const owner = areas.get(pid);
         if (!owner) continue;
-        const wz = l.mirror ? layout.loop.K - 8.5 : 8.5;
+        const wz = l.mirror ? layout.loop.K - 8.5 : 8.5 + (l.dz ?? 0);
         addWalker(owner, new THREE.Vector3(l.x0 + 1.2, l.y, wz), new THREE.Vector3(l.x1 - 1.2, l.y, wz));
         n++;
       }
@@ -514,7 +517,9 @@ async function boot() {
       html =
         currentArea.id === ATRIUM_ID
           ? `<p>Reception for the ContSys Hospital — a walkable model of ${esc(world.meta.label)}. The hospital street runs east; every wing's entrance opens off it. The Postgraduate Medical Centre (lecture theatre) is through the north door. Press M (or ⌖) for the porter.</p>`
-          : currentArea.id === THEATRE_ID
+          : currentArea.id === GALLERY_ID
+            ? `<p>The Reference Gallery, west of the Postgraduate Medical Centre: the clause 3.1 definitional concepts (the Reference collection) and the Resources annex open off its south side, exactly as wings open off the hospital street.</p>`
+            : currentArea.id === THEATRE_ID
             ? `<p>The Postgraduate Medical Centre: a raked lecture theatre for seminars and video presentations.</p>
                <h3>Presenting</h3>
                <ul><li>Slides advance with ← / → or PageUp / PageDown — presenter clickers work.</li>
@@ -843,7 +848,7 @@ async function boot() {
   // --- audit + debug API -----------------------------------------------------
   function audit() {
     const expect = {
-      areas: world.classes.length + 3, // + atrium + street + theatre
+      areas: world.classes.length + 4, // + atrium + street + theatre + gallery
       doorOut: world.classes.reduce((n, c) => n + c.out.length, 0),
       doorIn: world.classes.reduce((n, c) => n + c.in.length, 0),
       doorSelf: world.classes.reduce((n, c) => n + c.self.length, 0),
@@ -880,7 +885,12 @@ async function boot() {
     link(ATRIUM_ID, STREET_ID);
     link(ATRIUM_ID, THEATRE_ID); // the glazed link off Reception's north wall
     link(THEATRE_ID, ATRIUM_ID);
-    for (const w of layout.wings) for (const r of w.rootIds) { link(STREET_ID, r); link(r, STREET_ID); }
+    link(THEATRE_ID, GALLERY_ID); // the L-link off the PMC's rear aisle
+    link(GALLERY_ID, THEATRE_ID);
+    for (const w of layout.wings) {
+      const hub = w.street === 'gallery' ? GALLERY_ID : STREET_ID;
+      for (const r of w.rootIds) { link(hub, r); link(r, hub); }
+    }
     for (const [pid, kids] of Object.entries(layout.homeChildren)) {
       for (const k of kids) { link(pid, k); link(k, pid); } // real stairwell + landing
     }

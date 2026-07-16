@@ -15,9 +15,27 @@ export const CONFIG = {
   dropClausePrefix: '3.1',
   keepDespiteClause: ['event', 'role', 'knowledge'],
   /** Kept root classes grouped into a named annex instead of forming their own wings. */
-  annexes: { resources: { label: 'Resources annex', members: ['care resource', 'care funds'] } },
+  annexes: {
+    resources: { label: 'Resources annex', members: ['care resource', 'care funds'] },
+    reference: { label: 'Reference collection', members: [] }, // clause 3.1 — membership by clause
+  },
   /** Placeholder clause used on scaffold-layer classes: show wing name, not a room number. */
   placeholderClause: '9.9.9',
+};
+
+/**
+ * The publication models DOLCE parentage as metadata tags on top-level
+ * classes (ontology.type :: ontologyId) rather than as classes; wings group
+ * by tag, walked up the ORIGINAL parent chain where a root is untagged.
+ */
+const DOLCE_WINGS = {
+  'dolce=Event': ['event', 'event'],
+  'dolce=State': ['state', 'state'],
+  'dolce=Process': ['process', 'process'],
+  'dolce=MentalObject': ['mental-object', 'mental object'],
+  'dolce=TimeInterval': ['time-interval', 'time interval'],
+  'dolce=PhysicalObject': ['physical-object', 'physical object'],
+  'dul=Role': ['role', 'role'],
 };
 
 const ISO_NS = 'directives.org.iso';
@@ -42,7 +60,12 @@ export function buildWorld(raw, sourcePath) {
   const errors = [];
 
   // -------------------------------------------------------------- drop rule
+  // Scaffold classes are dropped outright. Clause 3.1 classes are KEPT as the
+  // Reference collection (off the Postgraduate Medical Centre) but stay OUT of
+  // the main hospital's inheritance: main classes contract through them as if
+  // dropped, and 3.1 classes keep only their own intra-3.1 hierarchy.
   const dropReason = new Map(); // id -> reason string
+  const defIds = new Set(); // clause 3.1 — the Reference collection
   for (const c of classes) {
     const clause = clauseOf(c);
     if (CONFIG.dropLabels.includes(c.label)) {
@@ -51,10 +74,11 @@ export function buildWorld(raw, sourcePath) {
       clause?.startsWith(CONFIG.dropClausePrefix) &&
       !CONFIG.keepDespiteClause.includes(c.label)
     ) {
-      dropReason.set(c.id, `definitional (clause ${clause})`);
+      defIds.add(c.id);
     }
   }
   const isDropped = (id) => dropReason.has(id);
+  const isDef = (id) => defIds.has(id);
 
   // -------------------------------------------------------------- contraction
   const ancestorMemo = new Map();
@@ -71,7 +95,7 @@ export function buildWorld(raw, sourcePath) {
         errors.push(`dangling extendsId ${pid} on "${byId.get(id)?.label}"`);
         continue;
       }
-      for (const a of isDropped(pid) ? keptAncestors(pid, stack) : [pid]) {
+      for (const a of isDropped(pid) || isDef(pid) ? keptAncestors(pid, stack) : [pid]) {
         if (!out.includes(a)) out.push(a);
       }
     }
@@ -81,14 +105,22 @@ export function buildWorld(raw, sourcePath) {
   }
 
   const kept = classes.filter((c) => !isDropped(c.id));
-  const supers = new Map(kept.map((c) => [c.id, keptAncestors(c.id)]));
+  const supers = new Map(
+    kept.map((c) => [
+      c.id,
+      isDef(c.id)
+        ? (c.extendsIds ?? []).filter((pid) => byId.has(pid) && isDef(pid)) // 3.1 hierarchy stays within 3.1
+        : keptAncestors(c.id),
+    ])
+  );
   const subs = new Map(kept.map((c) => [c.id, []]));
   for (const c of kept) for (const p of supers.get(c.id)) subs.get(p)?.push(c.id);
 
   const contractions = [];
   for (const c of kept) {
+    if (isDef(c.id)) continue; // the 3.1 hierarchy is preserved, not contracted
     for (const pid of c.extendsIds ?? []) {
-      if (isDropped(pid)) {
+      if (isDropped(pid) || isDef(pid)) {
         const resolved = keptAncestors(pid).map((a) => byId.get(a).label);
         contractions.push(
           `${c.label}: ${byId.get(pid).label} ⇒ ${resolved.length ? resolved.join(', ') : '(none — becomes a root)'}`
@@ -176,15 +208,44 @@ export function buildWorld(raw, sourcePath) {
   for (const [key, a] of Object.entries(CONFIG.annexes))
     for (const m of a.members) annexOfRoot.set(m, key);
 
+  // DOLCE category of a class: its own ontology tag, or the nearest tagged
+  // class up the ORIGINAL (pre-contraction) parent chain.
+  const tagOf = (c) =>
+    (c.metadata ?? []).find((m) => m.namespace === 'ontology.type' && m.key === 'ontologyId')?.value ?? null;
+  const dolceMemo = new Map();
+  function dolceOf(id, stack = new Set()) {
+    if (dolceMemo.has(id)) return dolceMemo.get(id);
+    if (stack.has(id)) return null;
+    stack.add(id);
+    const c = byId.get(id);
+    let t = tagOf(c);
+    if (!t || !DOLCE_WINGS[t]) {
+      t = null;
+      for (const pid of c?.extendsIds ?? []) {
+        const pt = byId.has(pid) ? dolceOf(pid, stack) : null;
+        if (pt) {
+          t = pt;
+          break;
+        }
+      }
+    }
+    stack.delete(id);
+    dolceMemo.set(id, t);
+    return t;
+  }
+
   const wingMemo = new Map();
   const floorMemo = new Map();
   function placement(id) {
     if (wingMemo.has(id)) return { wing: wingMemo.get(id), floor: floorMemo.get(id) };
     const parents = supers.get(id);
     let res;
-    if (!parents.length) {
+    if (isDef(id) && !parents.length) {
+      res = { wing: 'reference', floor: 0 };
+    } else if (!parents.length) {
       const label = byId.get(id).label;
-      res = { wing: annexOfRoot.get(label) ?? slug(label), floor: 0 };
+      const dolce = dolceOf(id);
+      res = { wing: annexOfRoot.get(label) ?? (dolce ? DOLCE_WINGS[dolce][0] : slug(label)), floor: 0 };
     } else {
       const p = placement(parents[0]); // primary parent chain
       res = { wing: p.wing, floor: p.floor + 1 };
@@ -195,16 +256,14 @@ export function buildWorld(raw, sourcePath) {
   }
   kept.forEach((c) => placement(c.id));
 
-  // Expected wing roots: the DOLCE layer (direct children of `thing`) plus
-  // configured annex members. Anything else that surfaces as a root after
-  // contraction deserves a warning.
+  // Every street root should resolve to a DOLCE category; anything that
+  // doesn't (and isn't an annex member) deserves a warning.
   const roots = kept.filter((c) => supers.get(c.id).length === 0);
-  const thingId = classes.find((c) => c.label === 'thing')?.id;
   for (const r of roots) {
-    const isDolce = thingId && (r.extendsIds ?? []).includes(thingId);
-    if (!isDolce && !annexOfRoot.has(r.label)) {
+    if (isDef(r.id) || annexOfRoot.has(r.label)) continue;
+    if (!dolceOf(r.id)) {
       const orig = (r.extendsIds ?? []).map((p) => byId.get(p)?.label).join(', ') || '(none)';
-      warnings.push(`unexpected wing root "${r.label}" (original parents: ${orig})`);
+      warnings.push(`wing root "${r.label}" has no DOLCE tag in its ancestry (original parents: ${orig})`);
     }
   }
 
@@ -243,14 +302,17 @@ export function buildWorld(raw, sourcePath) {
   });
 
   const wingKeys = [...new Set(worldClasses.map((c) => c.wing))].sort();
+  const dolceLabel = new Map(Object.values(DOLCE_WINGS).map(([key, label]) => [key, label]));
   const wings = wingKeys.map((key) => {
     const members = worldClasses.filter((c) => c.wing === key);
     const rootIds = roots.filter((r) => wingMemo.get(r.id) === key).map((r) => r.id);
     const annex = Object.hasOwn(CONFIG.annexes, key);
     return {
       key,
-      label: annex ? CONFIG.annexes[key].label : byId.get(rootIds[0])?.label ?? key,
+      label: annex ? CONFIG.annexes[key].label : dolceLabel.get(key) ?? byId.get(rootIds[0])?.label ?? key,
       annex,
+      /** Annexes hang off the Postgraduate Medical Centre; wings off the street loop. */
+      zone: annex ? 'gallery' : 'street',
       rootIds,
       classCount: members.length,
     };

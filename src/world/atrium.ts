@@ -114,10 +114,10 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
   const wingRows = [
     ...world.wings.map((w) => ({
       text: w.annex ? w.label : `${w.label} wing`,
-      sub: `${w.classCount} concepts`,
+      sub: `${w.classCount} concepts${w.zone === 'gallery' ? ' · at the Postgraduate Medical Centre' : ''}`,
       chip: wingColor(w.key),
     })),
-    { text: 'Postgraduate Medical Centre', sub: 'lecture theatre', chip: '#005eb8' },
+    { text: 'Postgraduate Medical Centre', sub: 'lecture theatre · Reference Gallery', chip: '#005eb8' },
   ];
   const wingSpec = {
     widthPx: 1024,
@@ -125,7 +125,7 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
     title: 'Hospital directory',
     subtitle: 'wings west to east — tap one to visit its entrance',
     rows: wingRows,
-    rowSize: 40, // 8 rows fit (7 wings + the theatre); 44 held only 7
+    rowSize: wingRows.length > 8 ? 32 : 40, // every row must fit AND stay tappable
   };
   const wingMesh = kit.sign(3.4, 2.4, -20, 1.9, Z1 - 0.09, Math.PI, () => makeBoardTexture(wingSpec), 'directory-wings');
   const wingRects = boardCellRects(wingSpec, wingRows.length);
