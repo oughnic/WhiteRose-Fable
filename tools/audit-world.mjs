@@ -20,7 +20,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { buildWorld } from './lib/core.mjs';
 import { computeLayout, corridorLen, G } from './lib/layout.mjs';
 
-const SOURCE = process.argv[2] ?? 'data/ContSys-FDIS-Feb-2026-MASTER.json';
+const SOURCE = process.argv[2] ?? 'data/A-system-of-concepts-for-the-continuity-of-care.json';
 const WORLD = 'public/world.json';
 
 let failures = 0;

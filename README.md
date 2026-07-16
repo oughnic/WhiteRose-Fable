@@ -1,13 +1,13 @@
 # ContSys Hospital (WhileRoseFable)
 
-A first-person, browser-hosted 3D exploration of the **ContSys FDIS Feb 2026** concept
+A first-person, browser-hosted 3D exploration of the **ISO 13940:2026 publication** concept
 model (ISO continuity-of-care concept system), styled as a 1960s NHS hospital.
 See [PLAN.md](PLAN.md) for the full design and delivery stages.
 
 ## How it fits together
 
 ```
-data/ContSys-FDIS-Feb-2026-MASTER.json     Mauro Data Mapper export (the source of truth)
+data/A-system-of-concepts-for-the-continuity-of-care.json     Mauro Data Mapper export (the source of truth)
         │  npm run world
         ▼
 public/world.json                          filtered, contracted, normalised world graph

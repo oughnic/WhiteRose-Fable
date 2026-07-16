@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { buildWorld } from './lib/core.mjs';
 
-const SOURCE = process.argv[2] ?? 'data/ContSys-FDIS-Feb-2026-MASTER.json';
+const SOURCE = process.argv[2] ?? 'data/A-system-of-concepts-for-the-continuity-of-care.json';
 const OUT_WORLD = 'public/world.json';
 const OUT_REPORT = 'reports/world-report.md';
 

@@ -1,33 +1,41 @@
 # World build report
 
-Source: `ContSys-FDIS-Feb-2026-MASTER.json` — ContSys FDIS Feb 2026 v1.0.0, exported 2026-02-06T14:39:32.3317288Z
-Generated: 2026-07-16T16:08:42.839Z (pipeline 0.1.0)
+Source: `A-system-of-concepts-for-the-continuity-of-care.json` — A system of concepts for the continuity of care v1.0.0, exported 2026-07-16T15:56:55.6135036Z
+Generated: 2026-07-16T16:33:43.827Z (pipeline 0.1.0)
 
 ## Totals
 | | |
 |---|---|
-| Raw dataClasses | 180 |
-| Kept (areas) | **161** |
-| Dropped | 19 |
+| Raw dataClasses | 172 |
+| Kept (areas) | **155** |
+| Dropped | 17 |
 | Doors kept (associations incl. self) | **237** |
 | Doors lost with dropped classes | 10 |
 | Self-references | 9 |
-| Wings | 6 + 1 annex |
-| Multi-parent classes (after contraction) | 12 |
-| Max inheritance depth (after contraction) | 7 |
+| Wings | 14 + 1 annex |
+| Multi-parent classes (after contraction) | 7 |
+| Max inheritance depth (after contraction) | 5 |
 
 ## Wings
 | Label | Key | Kind | Classes | Roots |
 |---|---|---|---|---|
+| authorization by law | `authorization-by-law` | wing | 1 | authorization by law |
+| care commitment | `care-commitment` | wing | 1 | care commitment |
+| care employment | `care-employment` | wing | 1 | care employment |
+| care mandate | `care-mandate` | wing | 10 | care mandate |
+| care plan | `care-plan` | wing | 4 | care plan |
+| care process | `care-process` | wing | 2 | care process |
 | event | `event` | wing | 35 | event |
-| mental object | `mental-object` | wing | 47 | mental object |
-| physical object | `physical-object` | wing | 3 | physical object |
-| Resources annex | `resources` | annex | 9 | care funds, care resource |
-| role | `role` | wing | 14 | role |
-| stative | `stative` | wing | 38 | stative |
-| time interval | `time-interval` | wing | 15 | time interval |
+| health matter | `health-matter` | wing | 29 | health matter |
+| health related period | `health-related-period` | wing | 14 | health related period |
+| health state | `health-state` | wing | 3 | health state |
+| knowledge | `knowledge` | wing | 26 | knowledge |
+| Resources annex | `resources` | annex | 11 | care funds, care resource |
+| role | `role` | wing | 15 | role |
+| shareable data repository | `shareable-data-repository` | wing | 2 | shareable data repository |
+| social environment | `social-environment` | wing | 1 | social environment |
 
-## Dropped classes (19)
+## Dropped classes (17)
 | Class | Clause | Reason |
 |---|---|---|
 | appointment | 3.1.8 | definitional (clause 3.1.8) |
@@ -47,8 +55,6 @@ Generated: 2026-07-16T16:08:42.839Z (pipeline 0.1.0)
 | resource | 3.1.13 | definitional (clause 3.1.13) |
 | risk | 3.1.15 | definitional (clause 3.1.15) |
 | social determinant of health | 3.1.14 | definitional (clause 3.1.14) |
-| tangible and visible entity | 9.9.9 | structural scaffold |
-| thing | — | structural scaffold |
 
 ## Doors lost (10)
 - social determinant of health —[relates to]→ social need  (source dropped (social determinant of health))
@@ -62,77 +68,41 @@ Generated: 2026-07-16T16:08:42.839Z (pipeline 0.1.0)
 - person —[plays]→ subject of care  (source dropped (person))
 - person —[part of]→ social environment  (source dropped (person))
 
-## Inheritance contractions (21)
-- mental object: thing ⇒ (none — becomes a root)
+## Inheritance contractions (15)
 - health record extract: information ⇒ knowledge
 - care information: information ⇒ knowledge
-- care supporting organization: organization ⇒ mental object
+- care supporting organization: organization ⇒ (none — becomes a root)
 - care funds: resource ⇒ (none — becomes a root)
 - health record component: information ⇒ knowledge
-- event: thing ⇒ (none — becomes a root)
-- authorization by law: mandate ⇒ mental object
+- authorization by law: mandate ⇒ (none — becomes a root)
 - care data: data ⇒ knowledge
-- sharable data repository: data repository ⇒ mental object
-- care employment: mandate ⇒ mental object
+- shareable data repository: data repository ⇒ (none — becomes a root)
+- care employment: mandate ⇒ (none — becomes a root)
 - record template: information model ⇒ knowledge
-- time interval: thing ⇒ (none — becomes a root)
-- physical object: thing ⇒ (none — becomes a root)
-- stative: thing ⇒ (none — becomes a root)
-- health record: data repository ⇒ mental object
-- care mandate: mandate ⇒ mental object
-- care commitment: commitment ⇒ mental object
+- health record: data repository ⇒ (none — becomes a root)
+- care mandate: mandate ⇒ (none — becomes a root)
+- care commitment: commitment ⇒ (none — becomes a root)
 - care resource: resource ⇒ (none — becomes a root)
 - care appointment: appointment ⇒ event
-- role: thing ⇒ (none — becomes a root)
 
-## Example-key quirks (37)
-- automated care: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- automatic medical device: legacy "example N" superseded by "exampleN" (kept 2, dropped 1)
-- care activity: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- care guideline: legacy "example N" superseded by "exampleN" (kept 3, dropped 1)
-- care organization: legacy "example N" superseded by "exampleN" (kept 5, dropped 1)
-- care personnel: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- care plan: legacy "example N" superseded by "exampleN" (kept 5, dropped 1)
-- care professional: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- care professional entitlement: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- care resource: legacy "example N" superseded by "exampleN" (kept 9, dropped 1)
-- care supporting organization: legacy "example N" superseded by "exampleN" (kept 2, dropped 1)
-- care third party activity: legacy "example N" superseded by "exampleN" (kept 2, dropped 1)
-- continuity facilitator mandate: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- discharge report: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- episode of care: legacy "example N" superseded by "exampleN" (kept 2, dropped 1)
-- episodes of care bundle: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- health certificate: legacy "example N" superseded by "exampleN" (kept 5, dropped 1)
-- health condition delay: legacy "example N" superseded by "exampleN" (kept 3, dropped 2)
-- health report: legacy "example N" superseded by "exampleN" (kept 2, dropped 1)
-- health summary: legacy "example N" superseded by "exampleN" (kept 4, dropped 1)
-- indirect care activity period: legacy "example N" superseded by "exampleN" (kept 3, dropped 3)
-- mandate to export personal information: legacy "example N" superseded by "exampleN" (kept 2, dropped 2)
-- mandated period of care: legacy "example N" superseded by "exampleN" (kept 2, dropped 1)
-- observed condition: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- other carer: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- professional health record: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- protocol: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- referral: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- request for service: legacy "example N" superseded by "exampleN" (kept 2, dropped 1)
-- request mandate: legacy "example N" superseded by "exampleN" (kept 3, dropped 1)
-- resource delay: legacy "example N" superseded by "exampleN" (kept 2, dropped 2)
-- resultant condition: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- self-care: legacy "example N" superseded by "exampleN" (kept 1, dropped 1)
-- subject of care: legacy "example N" superseded by "exampleN" (kept 5, dropped 1)
-- subject of care desire: legacy "example N" superseded by "exampleN" (kept 6, dropped 1)
-- subject of care preference delay: legacy "example N" superseded by "exampleN" (kept 2, dropped 2)
-- target condition: legacy "example N" superseded by "exampleN" (kept 2, dropped 2)
+## Example-key quirks (0)
+- none
 
-## Warnings (8)
-- missing description: "physical object"
-- missing termClause: "physical object"
-- missing description: "process"
-- missing termClause: "process"
-- missing description: "state"
-- missing termClause: "state"
-- missing description: "time interval"
-- missing termClause: "time interval"
+## Warnings (14)
+- unexpected wing root "knowledge" (original parents: (none))
+- unexpected wing root "care plan" (original parents: (none))
+- unexpected wing root "event" (original parents: (none))
+- unexpected wing root "authorization by law" (original parents: mandate)
+- unexpected wing root "shareable data repository" (original parents: data repository)
+- unexpected wing root "care employment" (original parents: mandate)
+- unexpected wing root "health state" (original parents: (none))
+- unexpected wing root "care process" (original parents: (none))
+- unexpected wing root "social environment" (original parents: (none))
+- unexpected wing root "care mandate" (original parents: mandate)
+- unexpected wing root "care commitment" (original parents: commitment)
+- unexpected wing root "health related period" (original parents: (none))
+- unexpected wing root "health matter" (original parents: (none))
+- unexpected wing root "role" (original parents: (none))
 
 ## Errors (0)
 - none
