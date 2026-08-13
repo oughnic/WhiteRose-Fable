@@ -516,7 +516,7 @@ async function boot() {
     if (!wc) {
       html =
         currentArea.id === ATRIUM_ID
-          ? `<p>Reception for the ContSys Hospital — a walkable model of ${esc(world.meta.label)}. The hospital street runs east; every wing's entrance opens off it. The Postgraduate Medical Centre (lecture theatre) is through the north door. Press M (or ⌖) for the porter.</p>`
+          ? `<p>Reception for White Rose General Hospital, home of the ContSys model — a walkable model of ${esc(world.meta.label)}. The hospital street runs east; every wing's entrance opens off it. The Postgraduate Medical Centre (lecture theatre) is through the north door. Press M (or ⌖) for the porter.</p>`
           : currentArea.id === GALLERY_ID
             ? `<p>The Reference Gallery, west of the Postgraduate Medical Centre: the clause 3.1 definitional concepts (the Reference collection) and the Resources annex open off its south side, exactly as wings open off the hospital street.</p>`
             : currentArea.id === THEATRE_ID

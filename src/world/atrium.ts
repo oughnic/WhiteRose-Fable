@@ -74,8 +74,8 @@ export function buildAtrium(world: World, signs: SignManager, art: ArtEntry[], p
       makeSignTexture({
         widthPx: 1792,
         heightPx: 384,
-        title: 'ContSys Hospital',
-        subtitle: `${world.meta.label} · ${world.classes.length} concepts · welcome — walk the model`,
+        title: 'White Rose General Hospital',
+        subtitle: `home of the ContSys model · ${world.meta.label} · ${world.classes.length} concepts · welcome — walk the model`,
         titleSize: 150,
         align: 'center',
       }),

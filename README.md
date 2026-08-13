@@ -1,8 +1,15 @@
-# ContSys Hospital (WhileRoseFable)
+# White Rose General Hospital (WhiteRose-Fable)
 
-A first-person, browser-hosted 3D exploration of the **ISO 13940:2026 publication** concept
-model (ISO continuity-of-care concept system), styled as a 1960s NHS hospital.
-See [PLAN.md](PLAN.md) for the full design and delivery stages.
+**Walk it through** — a first-person, browser-hosted 3D exploration of the **ISO 13940:2026**
+concept model (the ContSys continuity-of-care concept system), styled as a fictional 1960s
+NHS district general hospital in the Aire valley. One property of the ContSys pair — the
+other is the reference publication at contsys.org ("look it up"). See
+[INTEGRATION.md](INTEGRATION.md) for the branding and integration contract, and
+[PLAN.md](PLAN.md) for the full design and delivery stages.
+
+The Yorkshire rose logo (`public/rose.svg`) is
+["Yorkshire rose"](https://commons.wikimedia.org/wiki/File:Yorkshire_rose.svg) by Booyabazooka
+(English Wikipedia), via Wikimedia Commons, licensed CC BY-SA 3.0.
 
 ## How it fits together
 
