@@ -12,6 +12,7 @@ import { wingColor } from './world/colors';
 import { Player } from './engine/player';
 import { showMenu, isMenuOpen, type MenuItem } from './ui/menu';
 import { computeLayout, G } from '../tools/lib/layout.mjs';
+import { conceptKey, conceptSlug, conceptUrl } from './contsys';
 
 const PORTAL_COOLDOWN_MS = 700;
 
@@ -234,11 +235,16 @@ async function boot() {
     player.teleport(theatre.lecternPos, theatre.lecternYaw);
     setArea(theatre);
   }
-  // ?concept=care%20process: begin in that concept's lobby
+  // ?present=1: start with the interface hidden (same as pressing H), ready to film
+  if (new URLSearchParams(location.search).get('present') === '1') {
+    document.body.classList.add('filming');
+  }
+  // ?concept=care_plan (slug, hyphen alias, or spaced label): begin in that concept's lobby
   {
-    const wanted = new URLSearchParams(location.search).get('concept')?.trim().toLowerCase();
+    const param = new URLSearchParams(location.search).get('concept');
+    const wanted = param ? conceptKey(param) : undefined;
     if (wanted) {
-      const wc = world.classes.find((c) => c.label.toLowerCase() === wanted);
+      const wc = world.classes.find((c) => conceptKey(c.label) === wanted);
       const dest = wc && areas.get(wc.id);
       if (dest) {
         player.teleport(dest.spawnPos, dest.spawnYaw);
@@ -525,7 +531,8 @@ async function boot() {
                <ul><li>Slides advance with ← / → or PageUp / PageDown — presenter clickers work.</li>
                <li>Tap or click the screen: right side next, left side back.</li>
                <li><strong>H</strong> hides the whole interface for a clean recording; <strong>L</strong> dims the house lights.</li>
-               <li>Add <code>?start=theatre</code> to the address to begin at the lectern.</li></ul>
+               <li>Add <code>?start=theatre</code> to the address to begin at the lectern, and
+               <code>&amp;present=1</code> to start with the interface already hidden.</li></ul>
                <h3>Your own deck</h3>
                <p>Export slides as PNG/JPG (1920×1080), copy them into <code>slides/</code>, and list them in <code>slides/manifest.json</code> — video clips (.mp4) can be listed too.</p>`
             : `<p>The hospital street: a racetrack loop of two parallel streets joined by glazed cloisters across the courtyard — take whichever way round is shorter. Wing entrances open off the outside of each street; the courtyard holds the lawn and the Postgraduate Medical Centre.</p>`;
@@ -558,6 +565,7 @@ async function boot() {
       }
       if (wc.supers.length) html += `<h3>Generalisations (stairs up)</h3><ul>${wc.supers.map((id) => `<li>${name(id)}</li>`).join('')}</ul>`;
       if (wc.subs.length) html += `<h3>Specialisations (stairs down)</h3><ul>${wc.subs.map((id) => `<li>${name(id)}</li>`).join('')}</ul>`;
+      html += `<p><a href="${conceptUrl(wc.label)}" target="_blank" rel="noopener">Full definition — contsys.org/concept/${esc(conceptSlug(wc.label))}</a></p>`;
     }
     readerBody.innerHTML = html;
     readerWasLocked = player.controls.isLocked;

@@ -60,10 +60,13 @@ even the longest is fully readable); ceiling-hung signs name each concept
 from a distance; corridors end in a fire exit (or the concept's
 self-reference doors).
 
-URL parameters: `?concept=care%20process` starts in that concept's lobby
-(handy for sharing a link to one definition); `?start=theatre` starts at
-the lecture-theatre lectern; `?people=off|low|full` overrides the
-activity tier.
+URL parameters: `?concept=care_plan` starts in that concept's lobby — the
+persistent contsys.org slug, its hyphen alias, or the spaced label
+(`care%20plan`) all work; `?start=theatre` starts at the lecture-theatre
+lectern; `?present=1` starts with the interface hidden (as if H were
+pressed), ready to film; `?people=off|low|full` overrides the activity
+tier. Each concept's reader (R) links to its full definition at
+`contsys.org/concept/{slug}`.
 
 ## Filming a presentation
 

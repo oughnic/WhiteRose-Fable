@@ -8,6 +8,8 @@ Rose General Hospital**, master-branded ContSys.
 Hard rules:
 
 - Join and link concepts by **slug**, never by Mauro UUID (uuids are per-export only).
+  Slugs are **underscore** form (`care_plan` — spaces become `_`, real hyphens in terms are
+  kept), matching the live contsys.org URLs; hyphen forms are aliases only.
 - "continuity of care" is the standard's exact term; "continuity across care" only in
   marketing copy.
 - The Yorkshire rose (`public/rose.svg`) is CC BY-SA 3.0 — keep its attribution.
