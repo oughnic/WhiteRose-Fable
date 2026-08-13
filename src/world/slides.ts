@@ -60,7 +60,7 @@ function builtinDeck(): Entry[] {
         blueTitle(
           ctx,
           'Postgraduate Medical Centre',
-          'Lecture Theatre · ContSys Hospital',
+          'Lecture Theatre · White Rose General Hospital',
           'a walkable model of the continuity-of-care concept system'
         ),
     },
