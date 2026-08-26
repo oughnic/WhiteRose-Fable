@@ -358,7 +358,14 @@ async function boot() {
   renderer.domElement.addEventListener('dblclick', () => player.controls.lock());
   player.controls.addEventListener('lock', () => (startEl.style.display = 'none'));
   player.controls.addEventListener('unlock', () => {
-    if (!isMenuOpen() && !readerOpen) startEl.style.display = 'flex';
+    if (isMenuOpen() || readerOpen) return;
+    // Reading mode: with a concept live on the screen, a freed cursor is for the page — the
+    // start overlay would sit exactly on top of it and take every click meant for a link.
+    if (livePanel.visible && currentArea.id === THEATRE_ID) {
+      toast('Reading — click links, scroll the page · double-click the room to walk again');
+      return;
+    }
+    startEl.style.display = 'flex';
   });
 
   // --- travel ------------------------------------------------------------------
@@ -674,6 +681,14 @@ async function boot() {
     }
     return null;
   }
+  /** Where on the screen's face a click landed — the live page covers the mesh 1:1. */
+  function screenUvAt(nx: number, ny: number): THREE.Vector2 | null {
+    player.camera.updateMatrixWorld();
+    boardNdc.set(nx, ny);
+    raycaster.setFromCamera(boardNdc, player.camera);
+    const hit = raycaster.intersectObject(theatre.screen, false)[0];
+    return hit?.uv ?? null;
+  }
   function tryBoardPick(nx: number, ny: number): boolean {
     if (liftTransit || isMenuOpen() || readerOpen) return false;
     if (performance.now() - lastTravelAt < 400) return false; // tap+click double-fire guard
@@ -681,8 +696,12 @@ async function boot() {
     if (!cell) return false;
     if (cell.kind === 'screen') {
       if (livePanel.visible) {
-        // the click belongs to the page, and a locked pointer cannot reach it
-        toast('Esc frees the mouse for the page — C returns to slides');
+        // crosshair-click the page itself: the hit point on the mesh IS the point on the
+        // page. Same-origin only — a sealed frame falls back to advice.
+        const uv = screenUvAt(nx, ny);
+        if (!(uv && livePanel.clickAt(uv.x, uv.y))) {
+          toast('Esc frees the mouse for the page — C returns to slides');
+        }
         return true;
       }
       if (cell.id === 'next') deck.next();
@@ -735,17 +754,31 @@ async function boot() {
       if (!on) toast('Interface restored');
     }
     if (currentArea.id === THEATRE_ID) {
-      // slide control — ArrowLeft/Right, plus PageUp/Down so presenter
-      // clickers (which emit page keys) work while filming
-      if (e.code === 'ArrowRight' || e.code === 'PageDown') {
-        e.preventDefault();
-        deck.next();
-        toast(deck.label);
-      }
-      if (e.code === 'ArrowLeft' || e.code === 'PageUp') {
-        e.preventDefault();
-        deck.prev();
-        toast(deck.label);
+      if (livePanel.visible) {
+        // the deck keys read the page instead: a presenter's clicker pages the document.
+        // Same-origin in production; on a dev server the frame is sealed, so say so.
+        const step =
+          e.code === 'PageDown' || e.code === 'ArrowRight' ? 480 :
+          e.code === 'PageUp' || e.code === 'ArrowLeft' ? -480 :
+          e.code === 'ArrowDown' ? 160 :
+          e.code === 'ArrowUp' ? -160 : 0;
+        if (step !== 0) {
+          e.preventDefault();
+          if (!livePanel.scrollBy(step)) toast('Esc frees the mouse to scroll the page');
+        }
+      } else {
+        // slide control — ArrowLeft/Right, plus PageUp/Down so presenter
+        // clickers (which emit page keys) work while filming
+        if (e.code === 'ArrowRight' || e.code === 'PageDown') {
+          e.preventDefault();
+          deck.next();
+          toast(deck.label);
+        }
+        if (e.code === 'ArrowLeft' || e.code === 'PageUp') {
+          e.preventDefault();
+          deck.prev();
+          toast(deck.label);
+        }
       }
       if (e.code === 'KeyL') {
         houseLightsOn = !houseLightsOn;
@@ -766,6 +799,16 @@ async function boot() {
     }
   });
   let houseLightsOn = true;
+  // with the pointer locked, the wheel has no other job: let it read the page
+  addEventListener(
+    'wheel',
+    (e) => {
+      if (livePanel.visible && currentArea.id === THEATRE_ID && player.controls.isLocked) {
+        livePanel.scrollBy(e.deltaY);
+      }
+    },
+    { passive: true }
+  );
   promptEl.addEventListener('click', interact);
 
   // --- touch + drag look ------------------------------------------------------
@@ -848,7 +891,9 @@ async function boot() {
       if (cell) {
         promptEl.textContent =
           cell.kind === 'screen'
-            ? `Click — ${cell.label}`
+            ? livePanel.visible
+              ? 'Click — follow the link under the crosshair · scroll to read · C slides'
+              : `Click — ${cell.label}`
             : `Click — ${cell.kind === 'lift' ? 'lift to' : 'go to'} ${cell.label}`;
         promptEl.style.opacity = '1';
       }
