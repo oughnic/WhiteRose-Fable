@@ -158,4 +158,42 @@ export class LivePanel {
   resize() {
     this.cssRenderer.setSize(innerWidth, innerHeight);
   }
+
+  /**
+   * Scroll the page. Same-origin only — in production the publication shares the origin, so
+   * this works; on a dev server the frame is sealed and false says so, letting the caller
+   * fall back to advice rather than fail silently.
+   */
+  scrollBy(dy: number): boolean {
+    try {
+      const w = this.iframe.contentWindow;
+      if (!w || !this.iframe.contentDocument) return false;
+      w.scrollBy({ top: dy, behavior: 'smooth' });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Click whatever the crosshair rests on: (u,v) is the hit on the screen mesh, which maps
+   * straight onto page pixels because the page covers the screen 1:1. An untrusted click
+   * still follows links and toggles sections, which is all a reader needs.
+   */
+  clickAt(u: number, v: number): boolean {
+    try {
+      const doc = this.iframe.contentDocument;
+      if (!doc) return false;
+      const x = u * PAGE_W;
+      const y = (1 - v) * PAGE_H; // mesh UV counts from the bottom; pages count from the top
+      const el = doc.elementFromPoint(x, y);
+      if (!el) return false;
+      el.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true, clientX: x, clientY: y, view: doc.defaultView })
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
