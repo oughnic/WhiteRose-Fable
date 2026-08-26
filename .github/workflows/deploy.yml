@@ -1,6 +1,14 @@
-# Build the ContSys Hospital and deploy it to GitHub Pages.
-# Every push to main rebuilds the world from data/*.json (pipeline + audits)
+# Build the ContSys Hospital, commit the build, and deploy it to GitHub Pages.
+# Every push to master rebuilds the world from data/*.json (pipeline + audits)
 # and publishes dist/ — a fresh model export only needs committing.
+#
+# The build is also committed back, because dist/ is an input to contsys.org: that site
+# assembles the publication and this hospital into one Azure Static Web App, and the machine
+# doing the assembly has no Node to build this with. Until now dist/ was kept in step by hand,
+# which works only for as long as everyone remembers.
+#
+# Pages stays for now as a preview of master. It becomes redundant once the hospital is served
+# from contsys.org/hospital/.
 name: Deploy hospital
 
 on:
@@ -9,7 +17,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -28,6 +36,22 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build # world pipeline + audits + vite build
+
+      # Commit the build so contsys.org can pick it up without building this itself. Nothing to
+      # commit is the normal case when only docs changed, so it must not fail the run. The
+      # default token deliberately does not retrigger workflows, so this cannot loop.
+      - name: Commit the build
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist
+          if git diff --cached --quiet; then
+            echo 'dist unchanged'
+          else
+            git commit -m 'Rebuild dist from source'
+            git push
+          fi
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
