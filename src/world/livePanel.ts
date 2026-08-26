@@ -18,9 +18,14 @@ import { conceptSlug } from '../contsys';
  * panel's edges land on darkness rather than a stray slide.
  */
 
-/** The projection surface is 6 × 3.375 m — exactly 16:9 — so a 1920×1080 page lands on it 1:1. */
-const PAGE_W = 1920;
-const PAGE_H = 1080;
+/**
+ * The projection surface is 6 × 3.375 m — exactly 16:9. The page renders at 1280×720 rather
+ * than 1920×1080: fewer CSS pixels across the same six metres means every one is half as
+ * large again, which is the difference between desk type and presentation type when read
+ * from the seats. (?embed=1 then grows the type further and clears the page chrome.)
+ */
+const PAGE_W = 1280;
+const PAGE_H = 720;
 
 /**
  * Where the reference lives. Same-origin in production (the publication at /, the hospital at
@@ -107,7 +112,9 @@ export class LivePanel {
   show(slug?: string) {
     const s = conceptSlug(slug ?? this.lastSlug);
     this.lastSlug = s;
-    const url = `${conceptBase()}/concept/${encodeURIComponent(s)}`;
+    // ?embed=1 asks the publication for its presentation dress: chrome gone, type up.
+    // Harmless where the publication does not know it yet — the plain page comes back.
+    const url = `${conceptBase()}/concept/${encodeURIComponent(s)}?embed=1`;
     if (this.iframe.getAttribute('src') !== url) this.iframe.setAttribute('src', url);
 
     if (!this._visible) {
