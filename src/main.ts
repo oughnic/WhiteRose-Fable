@@ -700,7 +700,10 @@ async function boot() {
     }
     insideTriggers = nowInside;
     activePrompt = nearestPrompt;
-    promptEl.textContent = nearestPrompt ? (nearestPrompt.prompt ?? `E — ${nearestPrompt.label}`) : '';
+    // The prompt banner IS the button (it has a click handler), so on a keyboardless device
+    // say so — "E —" is an instruction a phone cannot follow.
+    const promptText = nearestPrompt ? (nearestPrompt.prompt ?? `E — ${nearestPrompt.label}`) : '';
+    promptEl.textContent = hasTouch ? promptText.replace(/^E — /, 'Tap here — ') : promptText;
     promptEl.style.opacity = nearestPrompt ? '1' : '0';
   }
 
