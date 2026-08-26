@@ -31,7 +31,7 @@ export const ATRIUM_ID = '__atrium';
 /** The 5 mm core of double-sided hanging signs — its rim reads as the edge. */
 const MAT_SIGN_EDGE = new THREE.MeshBasicMaterial({ color: 0x00417f });
 
-export type InteractKind = 'door-out' | 'door-in' | 'door-self' | 'stair-up' | 'stair-down' | 'lift';
+export type InteractKind = 'door-out' | 'door-in' | 'door-self' | 'stair-up' | 'stair-down' | 'lift' | 'fire-exit';
 
 export interface Interactable {
   kind: InteractKind;
@@ -694,6 +694,22 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
         }),
       `fire:${wc.label}`
     );
+    // The panic bars work. A fire exit's whole promise is that it leads OUT of the building
+    // whatever the building thinks — and out of this building is the published page for the
+    // room you are standing in. Deliberate use only (E at the bar), never a walk-through:
+    // an emergency exit that goes off when brushed against is a hazard, not an egg.
+    interactables.push({
+      kind: 'fire-exit',
+      areaId: wc.id,
+      label: wc.label,
+      targetIds: [],
+      triggerPos: kit.local(0, 0, -length + 0.8),
+      radius: 1.1,
+      halfX: 1.0,
+      halfZ: 0.75,
+      auto: false,
+      prompt: 'E — push the bar (emergency use only)',
+    });
   }
 
   // ---- walk-in lift cab in the back-right corner of the lobby ----------------
