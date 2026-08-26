@@ -34,6 +34,9 @@ const PAGE_H = 720;
  * merely means the room cannot reach inside, and the page still displays.
  */
 function conceptBase(): string {
+  // Served under /hospital/ — the production topology — the publication is beside us,
+  // whatever the hostname says. That makes a local rig with the same layout fully live.
+  if (location.pathname.startsWith('/hospital/')) return '';
   return location.hostname.endsWith('contsys.org') ? '' : 'https://contsys.org';
 }
 
