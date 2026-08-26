@@ -79,7 +79,7 @@ export class LivePanel {
     this.iframe.title = 'ContSys reference — live concept page';
 
     this.object = new CSS3DObject(this.iframe);
-    const s = 6 / PAGE_W; // 6 m of screen across 1920 px of page
+    const s = 6 / PAGE_W; // 6 m of screen across PAGE_W px of page
     this.object.scale.set(s, s, s);
     this.cssScene.add(this.object);
 
