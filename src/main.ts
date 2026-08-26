@@ -610,6 +610,50 @@ async function boot() {
   function interact() {
     if (isMenuOpen() || readerOpen) return;
     if (activePrompt?.kind === 'lift') openLiftMenu(activePrompt);
+    else if (activePrompt?.kind === 'fire-exit') evacuate(activePrompt.label);
+  }
+
+  /** Harsh where the lift chime is soft: a rising two-tone evacuation klaxon. */
+  function klaxon() {
+    if (!audio) return;
+    const t0 = audio.currentTime + 0.03;
+    for (let i = 0; i < 6; i++) {
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.type = 'square';
+      o.frequency.value = i % 2 ? 622 : 830;
+      const at = t0 + i * 0.19;
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.linearRampToValueAtTime(0.045, at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+      o.connect(g).connect(audio.destination);
+      o.start(at);
+      o.stop(at + 0.19);
+    }
+  }
+
+  let evacuating = false;
+  /**
+   * The fire exits work. A fire exit's promise is that it leads out of the building whatever
+   * the building thinks — and out of this building is the room's published definition, which
+   * is where the assembly point has been all along. Klaxon, fire-exit green, and gone.
+   */
+  function evacuate(label: string) {
+    if (evacuating) return;
+    evacuating = true;
+    klaxon();
+    toast('This is not a drill — proceed calmly to the assembly point');
+    setTimeout(() => {
+      fadeEl.style.background = '#00703c'; // running-man green
+      fadeEl.style.transition = 'opacity 0.7s';
+      fadeEl.style.opacity = '1';
+    }, 650);
+    const target = location.pathname.startsWith('/hospital/')
+      ? `/concept/${encodeURIComponent(conceptSlug(label))}`
+      : conceptUrl(label);
+    setTimeout(() => {
+      location.href = target;
+    }, 1700);
   }
 
   /** Triggers currently containing the player (same storey, within zone). */
@@ -656,7 +700,10 @@ async function boot() {
     }
     insideTriggers = nowInside;
     activePrompt = nearestPrompt;
-    promptEl.textContent = nearestPrompt ? (nearestPrompt.prompt ?? `E — ${nearestPrompt.label}`) : '';
+    // The prompt banner IS the button (it has a click handler), so on a keyboardless device
+    // say so — "E —" is an instruction a phone cannot follow.
+    const promptText = nearestPrompt ? (nearestPrompt.prompt ?? `E — ${nearestPrompt.label}`) : '';
+    promptEl.textContent = hasTouch ? promptText.replace(/^E — /, 'Tap here — ') : promptText;
     promptEl.style.opacity = nearestPrompt ? '1' : '0';
   }
 
