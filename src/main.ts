@@ -10,6 +10,7 @@ import { SlideDeck } from './world/slides';
 import { SignManager, type ArtEntry } from './world/signage';
 import { wingColor } from './world/colors';
 import { Player } from './engine/player';
+import { conceptKey } from './contsys';
 import { showMenu, isMenuOpen, type MenuItem } from './ui/menu';
 import { computeLayout, G } from '../tools/lib/layout.mjs';
 
@@ -234,18 +235,21 @@ async function boot() {
     player.teleport(theatre.lecternPos, theatre.lecternYaw);
     setArea(theatre);
   }
-  // ?concept=care%20process: begin in that concept's lobby
+  // ?concept=care_plan: begin in that concept's lobby. contsys.org publishes the underscore
+  // slug, so match on a separator-insensitive key rather than the raw label - comparing labels
+  // directly missed every multi-word concept, which is 146 of the 172.
   {
-    const wanted = new URLSearchParams(location.search).get('concept')?.trim().toLowerCase();
-    if (wanted) {
-      const wc = world.classes.find((c) => c.label.toLowerCase() === wanted);
+    const raw = new URLSearchParams(location.search).get('concept')?.trim();
+    if (raw) {
+      const wanted = conceptKey(raw);
+      const wc = world.classes.find((c) => conceptKey(c.label) === wanted);
       const dest = wc && areas.get(wc.id);
       if (dest) {
         player.teleport(dest.spawnPos, dest.spawnYaw);
         setArea(dest);
         updateVisibility();
       } else {
-        toast(`No concept called “${wanted}” — press M for the porter`);
+        toast(`No concept called “${raw}” — press M for the porter`);
       }
     }
   }
