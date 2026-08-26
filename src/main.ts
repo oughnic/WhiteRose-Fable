@@ -267,10 +267,10 @@ async function boot() {
       // an unknown name is passed through as typed — the page may still exist
       livePanel.show(wc ? wc.label : param);
       if (currentArea.id === THEATRE_ID) {
-        // The lectern spawn faces the audience, which is right for presenting — but asking
-        // for a concept on the screen means you came to read it, so turn to face it.
+        // The lectern spawn is for presenting; asking for a concept on the screen means you
+        // came to read it. Stand at the reading position, square on, the page filling the view.
         const sp = theatre.screen.getWorldPosition(new THREE.Vector3());
-        const p = player.floorPosition;
+        const p = theatre.viewPos;
         player.teleport(p, Math.atan2(-(sp.x - p.x), -(sp.z - p.z)));
       }
     }
