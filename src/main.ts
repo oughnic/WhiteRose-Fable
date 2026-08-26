@@ -7,6 +7,7 @@ import { buildStreet, STREET_ID } from './world/street';
 import { buildTheatre, THEATRE_ID } from './world/theatre';
 import { buildGallery, GALLERY_ID } from './world/gallery';
 import { SlideDeck } from './world/slides';
+import { LivePanel } from './world/livePanel';
 import { SignManager, type ArtEntry } from './world/signage';
 import { wingColor } from './world/colors';
 import { Player } from './engine/player';
@@ -116,6 +117,8 @@ async function boot() {
   areas.set(gallery.id, gallery);
   const deck = new SlideDeck(theatre.screen);
   void deck.load();
+  // the same screen, live: the published concept page as real DOM (C toggles, in the theatre)
+  const livePanel = new LivePanel(appEl, theatre.screen);
   for (const wc of world.classes) {
     const p = layout.areas[wc.id];
     // origin z comes from the layout: 0/17 on the south street, K/K−17 for
@@ -253,6 +256,16 @@ async function boot() {
       } else {
         toast(`No concept called “${wanted}” — press M for the porter`);
       }
+    }
+  }
+  // ?screen=care_plan: put that concept's published page on the lecture-theatre screen.
+  // Combine with ?start=theatre to arrive at the lectern with it already up.
+  {
+    const param = new URLSearchParams(location.search).get('screen');
+    if (param) {
+      const wc = world.classes.find((c) => conceptKey(c.label) === conceptKey(param));
+      // an unknown name is passed through as typed — the page may still exist
+      livePanel.show(wc ? wc.label : param);
     }
   }
 
@@ -660,6 +673,11 @@ async function boot() {
     const cell = boardCellAt(nx, ny);
     if (!cell) return false;
     if (cell.kind === 'screen') {
+      if (livePanel.visible) {
+        // the click belongs to the page, and a locked pointer cannot reach it
+        toast('Esc frees the mouse for the page — C returns to slides');
+        return true;
+      }
       if (cell.id === 'next') deck.next();
       else deck.prev();
       toast(deck.label);
@@ -726,6 +744,17 @@ async function boot() {
         houseLightsOn = !houseLightsOn;
         theatre.setHouseLights(houseLightsOn);
         toast(houseLightsOn ? 'House lights up' : 'House lights dimmed — L restores');
+      }
+      // C: swap the screen between the slide deck and the live concept page
+      if (e.code === 'KeyC') {
+        if (livePanel.visible) {
+          livePanel.hide();
+          deck.redraw();
+          toast('Slides restored');
+        } else {
+          livePanel.show();
+          toast(`Live: ${livePanel.slug} — C returns to slides`);
+        }
       }
     }
   });
@@ -842,6 +871,7 @@ async function boot() {
     }
     const t1 = performance.now();
     renderer.render(scene, player.camera);
+    livePanel.update(player.camera, currentArea.id === THEATRE_ID);
     frameMs.logic = t1 - t0;
     frameMs.render = performance.now() - t1;
     frameAvg = frameAvg * 0.96 + (frameMs.logic + frameMs.render) * 0.04;
@@ -851,6 +881,7 @@ async function boot() {
     player.camera.aspect = innerWidth / innerHeight;
     player.camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
+    livePanel.resize();
   });
 
   // --- audit + debug API -----------------------------------------------------
