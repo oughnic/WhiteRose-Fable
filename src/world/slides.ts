@@ -134,6 +134,10 @@ export class SlideDeck {
   prev() {
     this.show(Math.max(this.index - 1, 0));
   }
+  /** Repaint the current slide — live mode blacks the screen, and this hands it back. */
+  redraw() {
+    this.show(this.index);
+  }
 
   private show(i: number) {
     if (!this.entries.length) return;

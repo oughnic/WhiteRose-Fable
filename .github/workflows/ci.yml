@@ -1,0 +1,28 @@
+# Build every pull request, and keep the result.
+#
+# The machine this project is developed from has no Node, so a branch cannot be built or even
+# type-checked locally. This is the check that stands in: the same world pipeline, audits and
+# vite build the deploy runs, minus the deployment — plus the built dist as an artifact, so a
+# branch can be downloaded and walked before it merges.
+name: Build PR
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build # world pipeline + audits + vite build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 3

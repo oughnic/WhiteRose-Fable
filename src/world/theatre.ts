@@ -12,6 +12,12 @@ export interface TheatreArea extends BuiltArea {
   /** `?start=theatre` spawns here, beside the lectern, facing the audience. */
   lecternPos: THREE.Vector3;
   lecternYaw: number;
+  /**
+   * The reading position: centre aisle, front tier, ~4.5 m from the screen — close enough
+   * that the 6 m page dominates the view, far enough that all of it is in the view.
+   * `?screen=` arrivals stand here.
+   */
+  viewPos: THREE.Vector3;
 }
 
 /**
@@ -258,5 +264,7 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
     setHouseLights,
     lecternPos: new THREE.Vector3(-16.6, STAGE_Y, pitZ0 + 1.9),
     lecternYaw: 0, // face the audience
+    // centre aisle (kept clear of chairs), on the front tier at PIT_Y
+    viewPos: new THREE.Vector3(CX, PIT_Y, 28.9),
   };
 }
