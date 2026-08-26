@@ -259,13 +259,20 @@ async function boot() {
     }
   }
   // ?screen=care_plan: put that concept's published page on the lecture-theatre screen.
-  // Combine with ?start=theatre to arrive at the lectern with it already up.
+  // Combine with ?start=theatre to arrive with it already up.
   {
     const param = new URLSearchParams(location.search).get('screen');
     if (param) {
       const wc = world.classes.find((c) => conceptKey(c.label) === conceptKey(param));
       // an unknown name is passed through as typed — the page may still exist
       livePanel.show(wc ? wc.label : param);
+      if (currentArea.id === THEATRE_ID) {
+        // The lectern spawn faces the audience, which is right for presenting — but asking
+        // for a concept on the screen means you came to read it, so turn to face it.
+        const sp = theatre.screen.getWorldPosition(new THREE.Vector3());
+        const p = player.floorPosition;
+        player.teleport(p, Math.atan2(-(sp.x - p.x), -(sp.z - p.z)));
+      }
     }
   }
 
