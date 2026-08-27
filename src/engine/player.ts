@@ -39,30 +39,60 @@ export class Player {
   }
 
   /**
-   * Drag-to-look on the canvas. Coexists with pointer lock (touch-screen
-   * PCs get both): while the mouse is locked these handlers stand down.
+   * Drag-to-look and pinch-to-zoom on the canvas. Coexists with pointer lock
+   * (touch-screen PCs get both): while the mouse is locked these handlers stand
+   * down. Two fingers zoom the camera — binoculars, not the browser, which would
+   * scale the whole interface — and that is how a phone in the lecture theatre
+   * leans into the projected page. The look speed drops with the zoom so a
+   * zoomed view stays steerable, and a pinch released near 1× snaps home.
    */
   enableDragLook(domElement: HTMLElement) {
-    let looking = false;
-    let lastX = 0;
-    let lastY = 0;
+    const active = new Map<number, { x: number; y: number }>();
+    let pinchDist = 0;
+    let pinchZoom = 1;
+    const applyZoom = (z: number) => {
+      this.camera.zoom = Math.min(4, Math.max(1, z));
+      this.camera.updateProjectionMatrix();
+    };
     domElement.addEventListener('pointerdown', (e) => {
       if (this.controls.isLocked) return;
-      looking = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      domElement.setPointerCapture(e.pointerId);
+      active.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try {
+        domElement.setPointerCapture(e.pointerId);
+      } catch {
+        /* synthetic or already-captured pointers — tracking still works */
+      }
+      if (active.size === 2) {
+        const [a, b] = [...active.values()];
+        pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+        pinchZoom = this.camera.zoom;
+      }
     });
     domElement.addEventListener('pointermove', (e) => {
-      if (!looking || this.controls.isLocked) return;
+      if (this.controls.isLocked) return;
+      const prev = active.get(e.pointerId);
+      if (!prev) return;
+      if (active.size >= 2) {
+        // pinch: both fingers are the gesture, neither is a look
+        prev.x = e.clientX;
+        prev.y = e.clientY;
+        const [a, b] = [...active.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinchDist > 0) applyZoom(pinchZoom * (d / pinchDist));
+        return;
+      }
       const r = this.camera.rotation;
-      r.y -= (e.clientX - lastX) * 0.0042;
-      r.x = Math.max(-1.45, Math.min(1.45, r.x - (e.clientY - lastY) * 0.0042));
-      lastX = e.clientX;
-      lastY = e.clientY;
+      const k = 0.0042 / this.camera.zoom;
+      r.y -= (e.clientX - prev.x) * k;
+      r.x = Math.max(-1.45, Math.min(1.45, r.x - (e.clientY - prev.y) * k));
+      prev.x = e.clientX;
+      prev.y = e.clientY;
     });
     for (const ev of ['pointerup', 'pointercancel'] as const) {
-      domElement.addEventListener(ev, () => (looking = false));
+      domElement.addEventListener(ev, (e) => {
+        active.delete(e.pointerId);
+        if (active.size < 2 && this.camera.zoom < 1.06) applyZoom(1);
+      });
     }
   }
 
@@ -112,6 +142,11 @@ export class Player {
   teleport(pos: { x: number; y?: number; z: number }, yaw: number) {
     this.camera.position.set(pos.x, (pos.y ?? 0) + EYE_HEIGHT, pos.z);
     this.camera.rotation.set(0, yaw, 0);
+    // travel puts the binoculars down — arriving anywhere at 4× would disorient
+    if (this.camera.zoom !== 1) {
+      this.camera.zoom = 1;
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   /** Highest walkable surface under (x,z) that is at most CLIMB above the feet. */
