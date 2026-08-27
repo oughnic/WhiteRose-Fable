@@ -121,7 +121,23 @@
         gap: 12px;
         z-index: 15;
       }
-      #btns button {
+      /* lecture-theatre cluster: page the document / step the slides, and swap the
+         screen between slides and the live page — the touch shape of ←→ and C */
+      #theatre-btns {
+        position: fixed;
+        right: 22px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: none;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 15;
+      }
+      body.theatre #theatre-btns {
+        display: flex;
+      }
+      #btns button,
+      #theatre-btns button {
         width: 56px;
         height: 56px;
         border-radius: 50%;
@@ -325,7 +341,7 @@
         z-index: 5;
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-B-mbWAzt.js"></script>
+    <script type="module" crossorigin src="./assets/index-CQUwQ79T.js"></script>
   </head>
   <body>
     <div id="app"></div>
@@ -347,6 +363,11 @@
         <button id="btn-dash" title="Jump ahead" aria-label="Jump ahead">⏩</button>
         <button id="btn-read" title="Read this area" aria-label="Read this area">ℹ</button>
         <button id="btn-porter" title="Porter — search and travel" aria-label="Porter search">⌖</button>
+      </div>
+      <div id="theatre-btns">
+        <button id="btn-swap" title="Swap slides and the live page" aria-label="Swap slides and the live page">⇄</button>
+        <button id="btn-page-up" title="Page up" aria-label="Page up">▲</button>
+        <button id="btn-page-down" title="Page down" aria-label="Page down">▼</button>
       </div>
     </div>
     <div id="reader" role="dialog" aria-modal="true">
