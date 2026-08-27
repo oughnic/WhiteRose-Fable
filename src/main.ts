@@ -62,6 +62,9 @@ async function boot() {
   // phone-tier devices get reduced GPU load: WebKit kills pages that stall
   // or overrun memory ("A problem repeatedly occurred" on iPhone)
   const phone = navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) <= 500;
+  // any touch capability (phone, tablet, touch-screen PC) gets the touch UI;
+  // keyboard + mouse keep working alongside it
+  const hasTouch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window || matchMedia('(pointer: coarse)').matches;
 
   // activity tier: how many people about — auto by platform, ?people= overrides,
   // and prefers-reduced-motion keeps everyone seated
@@ -223,6 +226,8 @@ async function boot() {
   let currentArea: BuiltArea = atrium;
   function setArea(area: BuiltArea) {
     currentArea = area;
+    // the touch UI grows its theatre cluster (page/swap buttons) inside the PGMC
+    document.body.classList.toggle('theatre', area.id === THEATRE_ID);
     const wc = area.wc;
     signLabelEl.textContent = area.label;
     signRoomEl.textContent = wc
@@ -254,9 +259,27 @@ async function boot() {
         setArea(dest);
         updateVisibility();
       } else {
-        toast(`No concept called “${wanted}” — press M for the porter`);
+        toast(`No concept called “${wanted}” — ${hasTouch ? '⌖ calls the porter' : 'press M for the porter'}`);
       }
     }
+  }
+  // The reading position depends on the shape of the view. From viewPos the 6 m page fills
+  // two-thirds of a landscape desktop window; a portrait phone's horizontal field is a third
+  // of that, and from the same seat it would show only the middle of every line. So stand
+  // where 6 m of page spans ~92% of the horizontal field: on a landscape view that computes
+  // to nearer than viewPos (which wins), on a portrait phone it backs off up the centre
+  // aisle — the whole page in frame, pinch-to-zoom standing in for leaning forward.
+  let autoViewSpot: THREE.Vector3 | null = null;
+  function placeAtReadingPosition() {
+    const sp = theatre.screen.getWorldPosition(new THREE.Vector3());
+    const cam = player.camera;
+    const hFov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2) * cam.aspect);
+    const fit = 3 / Math.tan(Math.min(0.46 * hFov, 1.4));
+    // never nearer than the front-tier reading position, never beyond the entry aisle
+    const d = THREE.MathUtils.clamp(fit, sp.z - theatre.viewPos.z, sp.z - theatre.spawnPos.z);
+    const p = new THREE.Vector3(sp.x, theatre.aisleY(sp.z - d), sp.z - d);
+    player.teleport(p, Math.atan2(-(sp.x - p.x), -(sp.z - p.z)));
+    autoViewSpot = p;
   }
   // ?screen=care_plan: put that concept's published page on the lecture-theatre screen.
   // Combine with ?start=theatre to arrive with it already up.
@@ -266,13 +289,9 @@ async function boot() {
       const wc = world.classes.find((c) => conceptKey(c.label) === conceptKey(param));
       // an unknown name is passed through as typed — the page may still exist
       livePanel.show(wc ? wc.label : param);
-      if (currentArea.id === THEATRE_ID) {
-        // The lectern spawn is for presenting; asking for a concept on the screen means you
-        // came to read it. Stand at the reading position, square on, the page filling the view.
-        const sp = theatre.screen.getWorldPosition(new THREE.Vector3());
-        const p = theatre.viewPos;
-        player.teleport(p, Math.atan2(-(sp.x - p.x), -(sp.z - p.z)));
-      }
+      // The lectern spawn is for presenting; asking for a concept on the screen means you
+      // came to read it. Stand square on, at whatever distance the view's shape needs.
+      if (currentArea.id === THEATRE_ID) placeAtReadingPosition();
     }
   }
 
@@ -336,9 +355,6 @@ async function boot() {
     return best;
   }
 
-  // any touch capability (phone, tablet, touch-screen PC) gets the touch UI;
-  // keyboard + mouse keep working alongside it
-  const hasTouch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window || matchMedia('(pointer: coarse)').matches;
   const coarseOnly = matchMedia('(pointer: coarse)').matches; // true mobile/tablet
   if (hasTouch) {
     document.body.classList.add('touch');
@@ -782,6 +798,33 @@ async function boot() {
     tryBoardPick((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   });
 
+  // The theatre's controls, shared between the keys and the touch buttons: page the live
+  // document (or step the slides), and swap the screen between slides and the live page.
+  function pageTheatre(dir: 1 | -1) {
+    if (currentArea.id !== THEATRE_ID || isMenuOpen() || readerOpen) return;
+    if (livePanel.visible) {
+      if (!livePanel.scrollBy(dir * 480)) {
+        // same-origin fails only on a dev server; native drag on the page still scrolls it
+        toast(hasTouch ? 'This copy of the page is sealed — drag on the page itself' : 'Esc frees the mouse to scroll the page');
+      }
+    } else {
+      if (dir === 1) deck.next();
+      else deck.prev();
+      toast(deck.label);
+    }
+  }
+  function toggleScreenContent() {
+    if (currentArea.id !== THEATRE_ID || isMenuOpen() || readerOpen) return;
+    if (livePanel.visible) {
+      livePanel.hide();
+      deck.redraw();
+      toast('Slides restored');
+    } else {
+      livePanel.show();
+      toast(`Live: ${livePanel.slug} — ${hasTouch ? '⇄ returns to slides' : 'C returns to slides'}`);
+    }
+  }
+
   addEventListener('keydown', (e) => {
     if (readerOpen) {
       if (e.code === 'Escape' || e.code === 'KeyR') closeReader();
@@ -818,13 +861,11 @@ async function boot() {
         // clickers (which emit page keys) work while filming
         if (e.code === 'ArrowRight' || e.code === 'PageDown') {
           e.preventDefault();
-          deck.next();
-          toast(deck.label);
+          pageTheatre(1);
         }
         if (e.code === 'ArrowLeft' || e.code === 'PageUp') {
           e.preventDefault();
-          deck.prev();
-          toast(deck.label);
+          pageTheatre(-1);
         }
       }
       if (e.code === 'KeyL') {
@@ -833,16 +874,7 @@ async function boot() {
         toast(houseLightsOn ? 'House lights up' : 'House lights dimmed — L restores');
       }
       // C: swap the screen between the slide deck and the live concept page
-      if (e.code === 'KeyC') {
-        if (livePanel.visible) {
-          livePanel.hide();
-          deck.redraw();
-          toast('Slides restored');
-        } else {
-          livePanel.show();
-          toast(`Live: ${livePanel.slug} — C returns to slides`);
-        }
-      }
+      if (e.code === 'KeyC') toggleScreenContent();
     }
   });
   let houseLightsOn = true;
@@ -910,6 +942,10 @@ async function boot() {
       if (!isMenuOpen() && !readerOpen && player.dash(12) > 0.3) flashFade();
     });
     document.getElementById('btn-back')!.addEventListener('click', goBack);
+    // theatre cluster: what C and the deck keys do, as buttons — body.theatre shows them
+    document.getElementById('btn-swap')!.addEventListener('click', toggleScreenContent);
+    document.getElementById('btn-page-up')!.addEventListener('click', () => pageTheatre(-1));
+    document.getElementById('btn-page-down')!.addEventListener('click', () => pageTheatre(1));
   }
 
   // --- loop -------------------------------------------------------------------
@@ -981,6 +1017,16 @@ async function boot() {
     player.camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
     livePanel.resize();
+    // an orientation flip reshapes the view: a reader still standing where a ?screen=
+    // arrival put them is restood where the page fits the new shape
+    if (
+      autoViewSpot &&
+      livePanel.visible &&
+      currentArea.id === THEATRE_ID &&
+      player.floorPosition.distanceTo(autoViewSpot) < 0.6
+    ) {
+      placeAtReadingPosition();
+    }
   });
 
   // --- audit + debug API -----------------------------------------------------

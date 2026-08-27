@@ -13,11 +13,14 @@ export interface TheatreArea extends BuiltArea {
   lecternPos: THREE.Vector3;
   lecternYaw: number;
   /**
-   * The reading position: centre aisle, front tier, ~4.5 m from the screen — close enough
-   * that the 6 m page dominates the view, far enough that all of it is in the view.
-   * `?screen=` arrivals stand here.
+   * The nearest reading position: centre aisle, front tier, ~4.5 m from the screen — close
+   * enough that the 6 m page dominates a landscape view, far enough that all of it is in
+   * the view. `?screen=` arrivals stand here or further up the aisle: a portrait view is
+   * too narrow for the page from this close, so main.ts backs off until it fits.
    */
   viewPos: THREE.Vector3;
+  /** Centre-aisle floor height at depth z: rear aisle, five raked tiers, front pit. */
+  aisleY: (z: number) => number;
 }
 
 /**
@@ -266,5 +269,10 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
     lecternYaw: 0, // face the audience
     // centre aisle (kept clear of chairs), on the front tier at PIT_Y
     viewPos: new THREE.Vector3(CX, PIT_Y, 28.9),
+    aisleY: (z: number) => {
+      if (z < Z0 + 2) return 0; // rear aisle
+      if (z >= pitZ0) return PIT_Y;
+      return -DROP * (Math.floor((z - (Z0 + 2)) / TIER_D) + 1);
+    },
   };
 }
