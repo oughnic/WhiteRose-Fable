@@ -78,18 +78,18 @@
         color: #fff;
         font-family: Arial, Helvetica, sans-serif;
       }
+      /* the round buttons show on every device; the thumb pad only while walking
+         by touch or pen (body.touch follows the last pointer used — ui/inputMode.ts) */
       #touch-ui {
-        display: none;
-      }
-      body.touch #touch-ui {
         display: block;
       }
       /* filming mode (H): a completely clean frame for recording */
       body.filming #hud,
-      body.filming.touch #touch-ui {
+      body.filming #touch-ui {
         display: none;
       }
       #joy {
+        display: none;
         position: fixed;
         left: 26px;
         bottom: 30px;
@@ -100,6 +100,9 @@
         border: 2px solid rgba(255, 255, 255, 0.35);
         touch-action: none;
         z-index: 15;
+      }
+      body.touch #joy {
+        display: block;
       }
       #joy-knob {
         position: absolute;
@@ -147,6 +150,16 @@
         color: #fff;
         font-size: 22px;
         touch-action: manipulation;
+      }
+      /* ✋ use (open a door, call a lift, take the fire exit): the touch shape of E, shown
+         only while something usable is in front of you; white so it reads as the action */
+      #btns #btn-use {
+        display: none;
+        background: #fff;
+        color: #005eb8;
+      }
+      body.touch.can-use #btns #btn-use {
+        display: block;
       }
       #theatre-btns button {
         border-radius: 14px;
@@ -372,11 +385,12 @@
       <div id="crosshair"></div>
       <div id="toast"></div>
       <button id="prompt"></button>
-      <div id="hint">WASD move · mouse look · E interact · click boards & the lecture screen · B back · F jump ahead · R read · M porter · H hide UI · Esc release cursor</div>
+      <div id="hint">WASD move · mouse look · E open doors & use lifts · click boards & the lecture screen · B back · F jump ahead · R read · M porter · H hide UI · Esc release cursor</div>
     </div>
     <div id="touch-ui">
       <div id="joy"><div id="joy-knob"></div></div>
       <div id="btns">
+        <button id="btn-use" title="Open the door / use" aria-label="Open the door or use">✋</button>
         <button id="btn-back" title="Back to your last stop" aria-label="Back">↩</button>
         <button id="btn-dash" title="Jump ahead" aria-label="Jump ahead">⏩</button>
         <button id="btn-read" title="Read this area" aria-label="Read this area">ℹ</button>

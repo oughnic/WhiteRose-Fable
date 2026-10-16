@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import { makeSignTexture, SignManager, type ArtEntry } from './signage';
+import { makeSignTexture, SignManager, DECAL_OFFSET, type ArtEntry } from './signage';
 import { AreaKit, MAT, hangPicture, type BuiltArea, type PeopleTier } from './corridor';
+import { createMatteMaterial } from './materials';
+import { addWallDetail } from '../look/wallDetail';
 
 export const THEATRE_ID = '__theatre';
 
@@ -57,16 +59,17 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
 
   // ---- local materials (the house can dim these without touching the rest
   // of the hospital — every other builder shares the global MAT set) --------
-  const wallMat = (MAT.wall as THREE.MeshLambertMaterial).clone();
-  const ceilMat = (MAT.ceiling as THREE.MeshLambertMaterial).clone();
-  const floorMat = (MAT.floor as THREE.MeshPhongMaterial).clone();
+  const wallMat = MAT.wall.clone();
+  addWallDetail(wallMat); // clones don't inherit the wall finish
+  const ceilMat = MAT.ceiling.clone();
+  const floorMat = MAT.floor.clone();
   const ledMat = (MAT.led as THREE.MeshBasicMaterial).clone();
-  const darkMat = new THREE.MeshLambertMaterial({ color: 0x2b3138 }); // screen surround, risers
-  const brickMat = new THREE.MeshLambertMaterial({ color: 0x8d5f4a }); // 1960s buff-red brick
-  const grassMat = new THREE.MeshLambertMaterial({ color: 0x66794f });
-  const clearGlass = new THREE.MeshLambertMaterial({ color: 0xcfe0e8, transparent: true, opacity: 0.3 });
+  const darkMat = createMatteMaterial({ color: 0x2b3138 }); // screen surround, risers
+  const brickMat = createMatteMaterial({ color: 0x8d5f4a }); // 1960s buff-red brick
+  const grassMat = createMatteMaterial({ color: 0x66794f });
+  const clearGlass = createMatteMaterial({ color: 0xcfe0e8, transparent: true, opacity: 0.3 });
 
-  const dimmables: { m: THREE.MeshLambertMaterial | THREE.MeshPhongMaterial; base: THREE.Color }[] = [
+  const dimmables: { m: THREE.MeshStandardMaterial; base: THREE.Color }[] = [
     wallMat,
     ceilMat,
     floorMat,
@@ -81,20 +84,24 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
   // its lawn are actually visible on the walk over) --------------------------
   const LX = -15; // link centreline
   kit.box(3, 0.1, 5, MAT.floor, LX, -0.05, 17.5, { walkable: true, vinyl: true });
-  kit.box(3, 0.1, 5, MAT.ceiling, LX, 3.05, 17.5, { worldUV: true });
+  // from behind Reception's door header to inside the hall's: flush with either, its end faces fought them
+  kit.box(3, 0.1, 4.75, MAT.ceiling, LX, 3.05, 17.525, { worldUV: true });
+  // side walls run between the atrium wall (to z 15.15) and the hall's south
+  // wall (from 19.85): reaching into them, their end faces lay in those walls' faces
   for (const [sx, face] of [
     [LX - 1.575, 'x+'],
     [LX + 1.575, 'x-'],
   ] as const) {
-    kit.box(0.15, 1.0, 5, MAT.wall, sx, 0.5, 17.5, { solid: true, trim: [face] });
-    kit.box(0.08, 1.7, 5, clearGlass, sx, 1.85, 17.5, { solid: true });
-    kit.box(0.15, 0.3, 5, MAT.wall, sx, 2.85, 17.5, {});
+    kit.box(0.15, 1.0, 4.7, MAT.wall, sx, 0.5, 17.5, { solid: true, trim: [face] });
+    kit.box(0.08, 1.7, 4.7, clearGlass, sx, 1.85, 17.5, { solid: true });
+    kit.box(0.15, 0.3, 4.7, MAT.wall, sx, 2.85, 17.5, {});
     for (const mz of [16.2, 17.5, 18.8]) kit.steelSpec({ w: 0.18, h: 1.7, d: 0.07, x: sx, y: 1.85, z: mz });
   }
   for (const lz of [16.4, 18.6]) kit.led(LX, lz, 2.98);
-  // sign over the hall door, facing arrivals from Reception
+  // sign over the hall door, facing arrivals from Reception — proud of the
+  // south wall's link face (z 19.85), under the link ceiling (y 3.0)
   kit.sign(
-    2.6, 0.62, LX, 2.55, Z0 - 0.09, Math.PI,
+    2.6, 0.62, LX, 2.55, Z0 - 0.17, Math.PI,
     () =>
       makeSignTexture({
         widthPx: 1152,
@@ -109,15 +116,18 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
   // ---- hall shell -----------------------------------------------------------
   const wallH = ROOF + 2.4; // reaches from below the sunken pit to the ceiling
   const wallY = ROOF - wallH / 2;
-  // west wall, with the rear-aisle doorway to the Reference Gallery (z 19.4–21)
-  const GZ0 = 19.4;
-  const GZ1 = 21.0;
-  kit.box(0.15, wallH, GZ0 - Z0, wallMat, X0 - 0.075, wallY, (Z0 + GZ0) / 2, { solid: true });
+  // west wall, with the rear-aisle doorway to the Reference Gallery. The doorway
+  // runs from the south wall's inner face (z 20) and stays on the rear aisle
+  // (z < 22); the gallery link corridor matches it exactly (gallery.ts)
+  const GZ0 = Z0;
+  const GZ1 = 21.8;
   kit.box(0.15, wallH, Z1 - GZ1, wallMat, X0 - 0.075, wallY, (GZ1 + Z1) / 2, { solid: true });
   kit.box(0.15, ROOF - 2.3, GZ1 - GZ0, wallMat, X0 - 0.075, (ROOF + 2.3) / 2, (GZ0 + GZ1) / 2, {}); // header
-  kit.box(0.15, 2.4, GZ1 - GZ0, wallMat, X0 - 0.075, -1.2, (GZ0 + GZ1) / 2, { solid: true }); // below aisle level
+  // below aisle level — topped at the link floor's underside, not flush with its walking face
+  kit.box(0.15, 2.3, GZ1 - GZ0, wallMat, X0 - 0.075, -1.25, (GZ0 + GZ1) / 2, { solid: true });
+  // centred on the header over the doorway, clear of the south wall
   kit.sign(
-    1.9, 0.5, X0 + 0.09, 2.55, (GZ0 + GZ1) / 2, Math.PI / 2,
+    1.6, 0.42, X0 + 0.09, 2.55, (GZ0 + GZ1) / 2, Math.PI / 2,
     () =>
       makeSignTexture({
         widthPx: 960,
@@ -130,8 +140,9 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
   );
   kit.box(0.15, wallH, Z1 - Z0, wallMat, X1 + 0.075, wallY, CZ, { solid: true }); // east
   kit.box(X1 - X0 + 0.3, wallH, 0.15, wallMat, CX, wallY, Z1 + 0.075, { solid: true }); // north (screen wall)
-  // south wall with the 2 m entry aperture at the link
-  kit.box(-16 - X0, ROOF + 0.2, 0.15, wallMat, (X0 + -16) / 2, ROOF / 2 - 0.1, Z0 - 0.075, { solid: true });
+  // south wall with the 2 m entry aperture at the link (the west run also
+  // closes the corner over the west wall, since the doorway starts at z 20)
+  kit.box(-16 - X0 + 0.15, ROOF + 0.2, 0.15, wallMat, (X0 - 0.15 + -16) / 2, ROOF / 2 - 0.1, Z0 - 0.075, { solid: true });
   kit.box(X1 - -14, ROOF + 0.2, 0.15, wallMat, (-14 + X1) / 2, ROOF / 2 - 0.1, Z0 - 0.075, { solid: true });
   kit.box(2, ROOF - 2.3, 0.15, wallMat, LX, (ROOF + 2.3) / 2, Z0 - 0.075, {}); // header
   kit.box(X1 - X0, 0.1, Z1 - Z0, ceilMat, CX, ROOF + 0.05, CZ, { worldUV: true });
@@ -163,7 +174,7 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
   // ---- stage furniture: screen, surround, proscenium sign, lectern ---------
   const inFace = Z1 - 0.075; // interior face of the north wall
   kit.box(6.7, 4.1, 0.06, darkMat, CX, 0.85, inFace - 0.035, {}); // dark surround
-  const screenMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const screenMat = new THREE.MeshBasicMaterial({ color: 0xffffff, ...DECAL_OFFSET });
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(6, 3.375), screenMat);
   screen.position.set(CX, 0.84, inFace - 0.075);
   screen.rotation.y = Math.PI;
@@ -215,7 +226,7 @@ export function buildTheatre(signs: SignManager, art: ArtEntry[], people: People
   kit.box(0.12, 7, GZ0 - (Z0 - 0.15), brickMat, X0 - 0.21, 1.0, (Z0 - 0.15 + GZ0) / 2, {});
   kit.box(0.12, 7, Z1 + 0.15 - GZ1, brickMat, X0 - 0.21, 1.0, (GZ1 + Z1 + 0.15) / 2, {});
   kit.box(0.12, 2.2, GZ1 - GZ0, brickMat, X0 - 0.21, 3.4, (GZ0 + GZ1) / 2, {}); // over the gallery link
-  kit.box(0.12, 2.5, GZ1 - GZ0, brickMat, X0 - 0.21, -1.25, (GZ0 + GZ1) / 2, {}); // below it
+  kit.box(0.12, 2.4, GZ1 - GZ0, brickMat, X0 - 0.21, -1.3, (GZ0 + GZ1) / 2, {}); // below it, under the link floor
   kit.box(0.12, 7, Z1 - Z0 + 0.3, brickMat, X1 + 0.21, 1.0, CZ, {});
   kit.box(X1 - X0 + 0.7, 7, 0.12, brickMat, CX, 1.0, Z1 + 0.21, {});
   kit.box(-16.6 - (X0 - 0.35), 7, 0.12, brickMat, (X0 - 0.35 + -16.6) / 2, 1.0, Z0 - 0.21, {});

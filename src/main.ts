@@ -12,6 +12,22 @@ import { SignManager, type ArtEntry } from './world/signage';
 import { wingColor } from './world/colors';
 import { Player } from './engine/player';
 import { showMenu, isMenuOpen, type MenuItem } from './ui/menu';
+import { isTouchMode, isMouseFirst, watchInputMode } from './ui/inputMode';
+import { createMinimap } from './ui/minimap';
+import { createLiftRide } from './world/liftRide';
+import { createDoorPassage, isFacingDoor } from './world/doorSwing';
+import { addLightingControls, createLighting, updateLighting } from './world/lighting';
+import { addSurfaceControls } from './world/materials';
+import { addWallDetailControls } from './look/wallDetail';
+import { findZFighting } from './audit/zFightAudit';
+import { auditSigns } from './audit/signAudit';
+import { boxesAround } from './audit/boxRegistry';
+import { getDebugPane, watchDebugHash } from './debug/debugPane';
+import { ACTIVE_LOOK, addLookControls, takeSavedLookPose, type LookPose } from './look/lookMode';
+import { addRoundedBoxControls } from './look/roundedBoxes';
+import { addLookMaterialControls, applyLookMaterials } from './look/lookMaterials';
+import { createToonLights } from './look/toonLights';
+import { createLookRenderer } from './look/lookPostProcess';
 import { computeLayout, G } from '../tools/lib/layout.mjs';
 import { conceptKey, conceptSlug, conceptUrl } from './contsys';
 
@@ -62,9 +78,6 @@ async function boot() {
   // phone-tier devices get reduced GPU load: WebKit kills pages that stall
   // or overrun memory ("A problem repeatedly occurred" on iPhone)
   const phone = navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) <= 500;
-  // any touch capability (phone, tablet, touch-screen PC) gets the touch UI;
-  // keyboard + mouse keep working alongside it
-  const hasTouch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window || matchMedia('(pointer: coarse)').matches;
 
   // activity tier: how many people about — auto by platform, ?people= overrides,
   // and prefers-reduced-motion keeps everyone seated
@@ -81,11 +94,9 @@ async function boot() {
   // depth haze: long views fade out, and the far plane culls most of the
   // street (the difference between 7 fps and 60 on the spine vista)
   scene.fog = phone ? new THREE.Fog(0x5c6770, 42, 120) : new THREE.Fog(0x5c6770, 55, 150);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb9bec2, 1.0));
-  scene.add(new THREE.AmbientLight(0xffffff, 0.38));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.4);
-  sun.position.set(3, 8, 2);
-  scene.add(sun);
+  // lights: world/lighting.ts (created after the areas: the ceiling panels register as they're built)
+  // the A/B look (look/lookMode.ts): from here on, whatever enters the scene gets its materials
+  applyLookMaterials(scene);
 
   let renderer: THREE.WebGLRenderer;
   try {
@@ -155,6 +166,22 @@ async function boot() {
   player.setWalkables(allWalkables);
   player.teleport(atrium.spawnPos, atrium.spawnYaw);
   scene.add(player.camera);
+  // the look's panel folders first (top of the debug panel): changing look reloads where you stand
+  const getLookPose = (): LookPose => ({
+    x: player.position.x,
+    y: player.feetY,
+    z: player.position.z,
+    yaw: player.camera.rotation.y,
+    pitch: player.camera.rotation.x,
+  });
+  addLookControls(getLookPose);
+  addRoundedBoxControls(getLookPose);
+  addLookMaterialControls();
+  // the current look is lit by its ceiling panels, the toon look by its own rig; the sketchy
+  // look is unlit (flat colour under the drawing)
+  if (ACTIVE_LOOK === 'current') createLighting(scene, renderer);
+  const toonLights = ACTIVE_LOOK === 'toon' ? createToonLights(scene) : null;
+  const { renderLook, resizeLook } = createLookRenderer(renderer, scene, player.camera);
   if (phone) {
     player.camera.far = 130;
     player.camera.updateProjectionMatrix();
@@ -223,6 +250,14 @@ async function boot() {
   }
   updateVisibility();
 
+  // minimap: the storey you're on, by wing, from the areas' own membership boxes. Inside
+  // #hud, so filming mode (H) hides it with the rest of the interface.
+  const { updateMinimap } = createMinimap(
+    document.getElementById('hud')!,
+    [...areas.values()].map((a) => ({ id: a.id, boxes: a.boxes, color: a.wc ? wingColor(a.wc.wing) : '#b8c2c9' })),
+    Math.max(0, ...world.classes.map((c) => c.floor))
+  );
+
   let currentArea: BuiltArea = atrium;
   function setArea(area: BuiltArea) {
     currentArea = area;
@@ -259,7 +294,7 @@ async function boot() {
         setArea(dest);
         updateVisibility();
       } else {
-        toast(`No concept called “${wanted}” — ${hasTouch ? '⌖ calls the porter' : 'press M for the porter'}`);
+        toast(`No concept called “${wanted}” — ${isTouchMode() ? '⌖ calls the porter' : 'press M for the porter'}`);
       }
     }
   }
@@ -296,7 +331,11 @@ async function boot() {
   }
 
   // --- lift doors + arrival chime ---------------------------------------------
+  // transit: a ride (doors closing or moving) or a door passage is under way — no prompts,
+  // picks or travel; riding: the car is moving or a door is opening — feet frozen too
+  // (in a lift, looking around still works)
   let liftTransit = false;
+  let liftRiding = false;
   function updateLiftDoors(dt: number) {
     const l = currentArea.lift;
     if (!l) return;
@@ -355,21 +394,36 @@ async function boot() {
     return best;
   }
 
-  const coarseOnly = matchMedia('(pointer: coarse)').matches; // true mobile/tablet
-  if (hasTouch) {
-    document.body.classList.add('touch');
-    const badge = startEl.querySelector<HTMLElement>('.badge');
-    const blurb = startEl.querySelector<HTMLElement>('p');
-    if (badge) badge.textContent = coarseOnly ? 'Tap to enter' : 'Click or tap to enter';
-    if (blurb) blurb.textContent = 'Left pad or WASD to walk · drag to look · ⏩ jumps ahead · ℹ reads · ⌖ porter · double-click captures the mouse';
+  // a look change reloads the page: arrive back where you stood (after areaAt's helpers exist)
+  {
+    const pose = takeSavedLookPose();
+    if (pose) {
+      player.teleport(pose, pose.yaw, pose.pitch);
+      const here = areaAt(player.floorPosition);
+      if (here) setArea(here);
+      updateVisibility();
+    }
   }
+
+  // the thumb pad shows only while walking by touch or pen (body.touch); the start
+  // screen's wording follows whichever input is in hand
+  const badgeEl = startEl.querySelector<HTMLElement>('.badge');
+  const blurbEl = startEl.querySelector<HTMLElement>('p');
+  const blurbHtml = blurbEl?.innerHTML ?? '';
+  const describeStartScreen = (touch: boolean) => {
+    if (badgeEl) badgeEl.textContent = touch ? 'Tap to enter' : 'Click to enter';
+    if (!blurbEl) return;
+    if (touch) blurbEl.textContent = 'Left pad or WASD to walk · drag to look · ✋ opens doors · ⏩ jumps ahead · ℹ reads · ⌖ porter · double-click captures the mouse';
+    else blurbEl.innerHTML = blurbHtml;
+  };
+  watchInputMode(describeStartScreen);
+  describeStartScreen(isTouchMode());
   startEl.addEventListener('pointerup', (e) => {
-    // Touch-capable setups NEVER auto-lock: taps often report as "mouse" on
-    // touch-screen PCs and embedded views, and an accidental pointer lock
-    // freezes clientX/Y — which pins the joystick and kills drag-look.
-    // Drag-look covers mouse users too; double-click opts into pointer lock.
-    if (hasTouch || e.pointerType === 'touch') startEl.style.display = 'none';
-    else player.controls.lock();
+    // Only a mouse on a mouse-first device locks the pointer: an accidental lock
+    // freezes clientX/Y, which pins the joystick and kills drag-look on touch.
+    // Drag-look covers everyone; double-click opts into pointer lock.
+    if (e.pointerType === 'mouse' && isMouseFirst()) player.controls.lock();
+    else startEl.style.display = 'none';
   });
   renderer.domElement.addEventListener('dblclick', () => player.controls.lock());
   player.controls.addEventListener('lock', () => (startEl.style.display = 'none'));
@@ -424,39 +478,24 @@ async function boot() {
     lastTravelAt = performance.now();
   }
 
-  /** The full departure ritual: doors close, the car moves, chime on arrival. */
-  function liftDepart(src: BuiltArea | undefined, id: string) {
-    if (src?.lift) {
-      liftTransit = true;
-      src.lift.doors.target = 0;
-      setTimeout(() => {
-        liftTransit = false;
-        if (player.floorPosition.distanceTo(src.lift!.doorwayPos) < 1.7) rideLiftTo(id);
-        else toast('The lift left without you');
-      }, 650);
-    } else {
-      rideLiftTo(id);
-    }
-  }
-
-  /** Arrive by lift: inside the destination cab where possible, with the chime. */
-  function rideLiftTo(id: string) {
-    const dest = areas.get(id);
-    if (!dest) return;
-    if (dest.liftPos) {
-      recordDeparture();
-      player.teleport(dest.liftPos, dest.liftYaw ?? 0);
+  /** Lift rides: doors close → cut to the shut destination cab → ride → chime, doors open. */
+  const { rideLift } = createLiftRide({
+    player,
+    areaById: (id) => areas.get(id),
+    setLiftState: (transit, riding) => {
+      liftTransit = transit;
+      liftRiding = riding;
+    },
+    recordDeparture,
+    arriveIn: (dest) => {
       setArea(dest);
-      insideTriggers = triggersAt(player.floorPosition);
+      insideTriggers = triggersAt(player.floorPosition); // arrive disarmed
       updateVisibility();
-      flashFade();
-      toast(`Lift → ${dest.label}`);
       lastTravelAt = performance.now();
-      ding();
-    } else {
-      travelToArea(id, `Lift → ${dest.label}`);
-    }
-  }
+    },
+    ding,
+    toast,
+  });
 
   function passDoor(it: Interactable) {
     const destId = it.targetIds[0];
@@ -481,6 +520,18 @@ async function boot() {
     flashFade();
     lastTravelAt = performance.now();
   }
+
+  /** Doors open on request (E / ✋): step square to it, it swings towards you, then through. */
+  const { openDoor } = createDoorPassage({
+    player,
+    scene,
+    setTransit: (busy) => {
+      liftTransit = busy;
+      liftRiding = busy;
+    },
+    passThrough: (it) =>
+      it.kind === 'stair-up' || it.kind === 'stair-down' ? travelToArea(it.targetIds[0], it.label) : passDoor(it),
+  });
 
   const itemFor = (id: string, prefix = ''): MenuItem => {
     const c = byId.get(id);
@@ -509,12 +560,13 @@ async function boot() {
     }
     items.push({ label: '⌂  Reception', sub: 'ground floor', value: ATRIUM_ID });
     showMenu('Lift', wc?.label ?? '', items, {
-      onPick: (id) => done(() => liftDepart(areas.get(it.areaId), id)),
+      onPick: (id) => done(() => void rideLift(areas.get(it.areaId), id, true)),
       onClose: () => done(),
     });
   }
 
   function openSearch() {
+    if (liftTransit) return; // the porter can't fetch you out of a moving lift
     const wasLocked = player.controls.isLocked;
     if (wasLocked) player.controls.unlock();
     const items = [...world.classes]
@@ -627,6 +679,7 @@ async function boot() {
     if (isMenuOpen() || readerOpen) return;
     if (activePrompt?.kind === 'lift') openLiftMenu(activePrompt);
     else if (activePrompt?.kind === 'fire-exit') evacuate(activePrompt.label);
+    else if (activePrompt?.doorway) void openDoor(activePrompt);
   }
 
   /** Harsh where the lift chime is soft: a rising two-tone evacuation klaxon. */
@@ -692,9 +745,10 @@ async function boot() {
   let insideTriggers = new Set<Interactable>();
   function checkInteractions() {
     if (liftTransit) {
-      // boarding: doors are closing, nothing else should fire or prompt
+      // boarding, or a door opening: nothing else should fire or prompt
       activePrompt = null;
       promptEl.style.opacity = '0';
+      document.body.classList.remove('can-use');
       return;
     }
     const now = performance.now();
@@ -702,7 +756,8 @@ async function boot() {
     let nearestPrompt: Interactable | null = null;
     for (const it of nowInside) {
       if (!it.auto) {
-        nearestPrompt = it;
+        // a door is only offered to someone facing it — never to someone backing into it
+        if (!it.doorway || isFacingDoor(player, it.doorway)) nearestPrompt = it;
         continue;
       }
       if (insideTriggers.has(it)) continue; // re-arms only after stepping out
@@ -719,8 +774,10 @@ async function boot() {
     // The prompt banner IS the button (it has a click handler), so on a keyboardless device
     // say so — "E —" is an instruction a phone cannot follow.
     const promptText = nearestPrompt ? (nearestPrompt.prompt ?? `E — ${nearestPrompt.label}`) : '';
-    promptEl.textContent = hasTouch ? promptText.replace(/^E — /, 'Tap here — ') : promptText;
+    promptEl.textContent = isTouchMode() ? promptText.replace(/^E — /, 'Tap here — ') : promptText;
     promptEl.style.opacity = nearestPrompt ? '1' : '0';
+    // the touch use button (✋) shows only while there is something to use
+    document.body.classList.toggle('can-use', !!nearestPrompt);
   }
 
   // --- interactive lift boards: look/point at a row and click or tap ----------
@@ -771,11 +828,11 @@ async function boot() {
       else deck.prev();
       toast(deck.label);
     } else if (cell.kind === 'lift') {
-      // picking from inside the cab gets the doors-close ritual
+      // picking from inside the cab gets the doors-close ritual; from the lobby
+      // board you're cut straight into the destination's shut cab
       const src = currentArea;
-      const inCab = src.liftPos && player.floorPosition.distanceTo(src.liftPos) < 1.2;
-      if (inCab) liftDepart(src, cell.id);
-      else rideLiftTo(cell.id);
+      const inCab = !!src.liftPos && player.floorPosition.distanceTo(src.liftPos) < 1.2;
+      void rideLift(src, cell.id, inCab);
     } else {
       travelToArea(cell.id, `→ ${areas.get(cell.id)?.label ?? cell.label}`);
     }
@@ -805,7 +862,7 @@ async function boot() {
     if (livePanel.visible) {
       if (!livePanel.scrollBy(dir * 480)) {
         // same-origin fails only on a dev server; native drag on the page still scrolls it
-        toast(hasTouch ? 'This copy of the page is sealed — drag on the page itself' : 'Esc frees the mouse to scroll the page');
+        toast(isTouchMode() ? 'This copy of the page is sealed — drag on the page itself' : 'Esc frees the mouse to scroll the page');
       }
     } else {
       if (dir === 1) deck.next();
@@ -821,7 +878,7 @@ async function boot() {
       toast('Slides restored');
     } else {
       livePanel.show();
-      toast(`Live: ${livePanel.slug} — ${hasTouch ? '⇄ returns to slides' : 'C returns to slides'}`);
+      toast(`Live: ${livePanel.slug} — ${isTouchMode() ? '⇄ returns to slides' : 'C returns to slides'}`);
     }
   }
 
@@ -835,7 +892,7 @@ async function boot() {
     if (e.code === 'KeyR') openReader();
     if (e.code === 'KeyM') openSearch();
     if (e.code === 'KeyB') goBack();
-    if (e.code === 'KeyF') {
+    if (e.code === 'KeyF' && !liftRiding) {
       if (player.dash(12) > 0.3) flashFade();
     }
     // filming: H strips every scrap of interface for a clean recording
@@ -892,9 +949,10 @@ async function boot() {
 
   // --- touch + drag look ------------------------------------------------------
   // always on: it only acts while the pointer is NOT locked, so mouse users
-  // can drag-look too and touch works on any device
+  // can drag-look too and touch works on any device. The on-screen controls are
+  // wired everywhere: the buttons always show, the thumb pad only in touch mode (CSS)
   player.enableDragLook(renderer.domElement);
-  if (hasTouch) {
+  {
     const joy = document.getElementById('joy')!;
     const knob = document.getElementById('joy-knob')!;
     let joyId: number | null = null;
@@ -934,12 +992,15 @@ async function boot() {
     });
     joy.addEventListener('pointerup', reset);
     joy.addEventListener('pointercancel', reset);
+    // a mouse click mid-walk hides the pad (touch mode off): stop walking with it
+    joy.addEventListener('lostpointercapture', reset);
+    document.getElementById('btn-use')!.addEventListener('click', interact);
     document.getElementById('btn-read')!.addEventListener('click', () => (readerOpen ? closeReader() : openReader()));
     document.getElementById('btn-porter')!.addEventListener('click', () => {
       if (!isMenuOpen() && !readerOpen) openSearch();
     });
     document.getElementById('btn-dash')!.addEventListener('click', () => {
-      if (!isMenuOpen() && !readerOpen && player.dash(12) > 0.3) flashFade();
+      if (!isMenuOpen() && !readerOpen && !liftRiding && player.dash(12) > 0.3) flashFade();
     });
     document.getElementById('btn-back')!.addEventListener('click', goBack);
     // theatre cluster: what C and the deck keys do, as buttons — body.theatre shows them
@@ -958,7 +1019,7 @@ async function boot() {
   renderer.setAnimationLoop(() => {
     const t0 = performance.now();
     const dt = Math.min(clock.getDelta(), 0.05);
-    if (!isMenuOpen()) player.update(dt);
+    if (!isMenuOpen() && !liftRiding) player.update(dt);
     updateLiftDoors(dt);
     for (const entry of walkers) {
       const vis = entry.owner.group.visible;
@@ -1004,8 +1065,11 @@ async function boot() {
         }
       }
     }
+    updateLighting(player.position, player.feetY); // the ceiling light pool follows you
+    toonLights?.updateToonLights(player.position); // the toon lamp walks with you
+    updateMinimap(player.floorPosition, player.camera.rotation.y, currentArea.id);
     const t1 = performance.now();
-    renderer.render(scene, player.camera);
+    renderLook();
     livePanel.update(player.camera, currentArea.id === THEATRE_ID);
     frameMs.logic = t1 - t0;
     frameMs.render = performance.now() - t1;
@@ -1016,6 +1080,7 @@ async function boot() {
     player.camera.aspect = innerWidth / innerHeight;
     player.camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
+    resizeLook();
     livePanel.resize();
     // an orientation flip reshapes the view: a reader still standing where a ?screen=
     // arrival put them is restood where the page fits the new shape
@@ -1119,7 +1184,24 @@ async function boot() {
     areas,
     interactables: allInteractables,
     audit,
+    /** Coplanar faces with different materials (z-fighting), clustered. */
+    zfight: (includeBuried = false) => findZFighting(scene, includeBuried),
+    /** Signs cut by, blocked by, or facing a box — and signs whose text overflows. */
+    signAudit: (checkText = true) => auditSigns(signs, checkText),
+    /** Logged world boxes within r of a point (dev / ?audit): what meets there. */
+    boxesAt: (x: number, y: number, z: number, r = 0.05) => boxesAround(x, y, z, r),
+    /** The Tweakpane debug panel (only with #debug in the URL), else null. */
+    debugPane: getDebugPane,
+    /** Ride a lift from the current area (testing): `aboard` = picked from inside the cab. */
+    rideLift: (destId: string, aboard = true) => rideLift(currentArea, destId, aboard),
+    liftState: () => ({
+      transit: liftTransit,
+      riding: liftRiding,
+      doors: currentArea.lift ? +currentArea.lift.doors.openness.toFixed(2) : null,
+    }),
     openSearch,
+    /** Use whatever the prompt offers (testing): E / the ✋ button. */
+    useDoor: () => interact(),
     perf: () => ({ ...frameMs, avg: +frameAvg.toFixed(1), drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
     people: () => ({ tier: people, walkers: walkers.length, demoteStage }),
     /** Advance walkers manually (testing without an animation loop). */
@@ -1159,7 +1241,7 @@ async function boot() {
       travelToArea(target.id);
       return target.label;
     },
-    /** Walk forward n metres in 10 cm steps with ground-follow, triggering doors. */
+    /** Walk forward n metres in 10 cm steps with ground-follow, updating prompts (doors need `useDoor`). */
     walk(metres: number) {
       const steps = Math.ceil(Math.abs(metres) / 0.1);
       for (let i = 0; i < steps; i++) {
@@ -1176,6 +1258,13 @@ async function boot() {
       return { x: +p.x.toFixed(2), y: +(p.y - 1.7).toFixed(2), z: +p.z.toFixed(2), area: currentArea.label };
     },
   };
+  // #debug: Tweakpane is imported only while the hash is on the URL
+  if (ACTIVE_LOOK === 'current') {
+    addLightingControls();
+    addSurfaceControls(scene);
+    addWallDetailControls();
+  }
+  watchDebugHash();
 
   console.info(
     `[hospital] built ${areas.size} areas, ${allInteractables.length} interactables, ${signs.count} signs, ` +

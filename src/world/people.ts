@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { createMatteMaterial } from './materials';
+import { createBoxGeometry } from '../look/roundedBoxes';
 
 /**
  * Low-poly 1960s NHS people: nurses, doctors, porters, sisters and patients.
@@ -8,7 +10,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
  */
 
 /** One material for every person — vertex colours carry the outfits. */
-export const MAT_PEOPLE = new THREE.MeshLambertMaterial({ vertexColors: true });
+export const MAT_PEOPLE = createMatteMaterial({ vertexColors: true });
 
 const SKIN = ['#c98d64', '#8d5a3c', '#e3b498', '#6b4a30', '#d9a37e'];
 const HAIR = ['#2e2620', '#5b4632', '#8c8c8c', '#d9d3c5', '#141414'];
@@ -41,7 +43,7 @@ export function personRng(seed: number) {
 
 /** A box with a solid vertex colour, translated into place. */
 function colorBox(w: number, h: number, d: number, x: number, y: number, z: number, color: string): THREE.BufferGeometry {
-  const g = new THREE.BoxGeometry(w, h, d);
+  const g = createBoxGeometry(w, h, d);
   g.translate(x, y, z);
   const c = new THREE.Color(color);
   const n = g.attributes.position.count;

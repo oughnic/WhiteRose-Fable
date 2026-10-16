@@ -4,6 +4,7 @@ import { makeSignTexture, SignManager, type ArtEntry } from './signage';
 import { wingColor } from './colors';
 import { AreaKit, MAT, hangPicture, type BuiltArea, type PeopleTier } from './corridor';
 import { G, type Layout } from '../../tools/lib/layout.mjs';
+import { createMatteMaterial } from './materials';
 
 export const STREET_ID = '__street';
 
@@ -41,8 +42,8 @@ export function buildStreet(
   const wingByKey = new Map(world.wings.map((w) => [w.key, w]));
   // courtyard-facing glazing is genuinely transparent (the outward-facing
   // daylight bands elsewhere stay the opaque glow)
-  const glass = new THREE.MeshLambertMaterial({ color: 0xcfe0e8, transparent: true, opacity: 0.3 });
-  const grass = new THREE.MeshLambertMaterial({ color: 0x66794f });
+  const glass = createMatteMaterial({ color: 0xcfe0e8, transparent: true, opacity: 0.3 });
+  const grass = createMatteMaterial({ color: 0x66794f });
 
   /** One street run: outer wall carries the wing openings, inner is glazed. */
   const buildRun = (side: 'south' | 'north') => {
@@ -66,7 +67,9 @@ export function buildStreet(
 
     // inner wall: sill + clear glazing + header, with cloister openings
     const segs: [number, number][] = [];
-    let cur = x0;
+    // the south run starts past Reception's east wall (x 0–0.15): from x 0 its
+    // glazing's end face lay in that wall's face
+    let cur = side === 'south' ? x0 + 0.15 : x0;
     for (const [g0, g1] of connectors) {
       if (g0 > cur) segs.push([cur, g0]);
       cur = Math.max(cur, g1);
@@ -133,8 +136,9 @@ export function buildStreet(
         kit.box(b0 - cursor, H, 0.15, MAT.wall, (cursor + b0) / 2, H / 2, zOutWall, { solid: true, trim: [outTrim] });
         dressGap(cursor, b0);
       }
-      // header above the root's own 3 m opening (root wall is 3 m high; street is 4)
-      kit.box(G.LOBBY_W, H - G.ROOM_H, 0.15, MAT.wall, r.x, (H + G.ROOM_H) / 2, zOutWall, {});
+      // header above the root's own 3 m opening (root wall is 3 m high; street is 4),
+      // starting over the lobby ceiling slab (3.0–3.1) rather than flush with its underside
+      kit.box(G.LOBBY_W, H - G.ROOM_H - 0.1, 0.15, MAT.wall, r.x, (H + G.ROOM_H + 0.1) / 2, zOutWall, {});
       cursor = b1;
     }
     if (x1 > cursor) {
@@ -168,15 +172,16 @@ export function buildStreet(
       kit.box(0.15, H, z1 - z0 + 0.3, MAT.wall, x0 - 0.075, H / 2, zc, { solid: true, trim: ['x+'] });
     }
 
-    // street name sign at the west end, facing arrivals
+    // street name sign at the west end: the south run's faces arrivals from
+    // Reception; the north run is capped there, so its sign faces east, up the street
     kit.sign(
-      3.4, 0.8, x0 + 0.4, 2.7, zc, -Math.PI / 2,
+      3.4, 0.8, x0 + 0.4, 2.7, zc, side === 'south' ? -Math.PI / 2 : Math.PI / 2,
       () =>
         makeSignTexture({
           widthPx: 1280,
           heightPx: 300,
           title: 'Hospital Street',
-          subtitle: `${side} side · wings this way →`,
+          subtitle: side === 'south' ? 'south side · wings this way →' : 'north side · Reception via the cloisters',
           titleSize: 96,
         }),
       `street-name:${side}`
@@ -193,9 +198,17 @@ export function buildStreet(
   const nSouth = layout.wings.filter((w) => w.street === 'south').length;
   let kS = 0;
   let kN = 0;
+  let lineIndex = 0;
   for (const w of layout.wings) {
     if (w.street === 'gallery') continue; // the annexes are reached via the PMC
-    const lineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(wingColor(w.key)) });
+    // lines and stubs cross on one plane: a distinct depth offset per wing fixes
+    // which one draws on top, so the crossings never flicker
+    const lineMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(wingColor(w.key)),
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -2 - lineIndex++,
+    });
     const doorX = layout.areas[w.rootIds[0]].x;
     if (w.street === 'south') {
       const lz = loop.south.z0 + 0.4 + kS * 0.24;
@@ -219,12 +232,16 @@ export function buildStreet(
     const ccx = (c0 + c1) / 2;
     const clen = czN - czS;
     const czc = (czS + czN) / 2;
+    // the side walls stop at the streets' inner wall lines (0.15 short each end),
+    // which close their ends: carried through, their end faces lay in the faces of
+    // those walls and of Reception's east wall
+    const wallLen = clen - 0.3;
     kit.box(c1 - c0, 0.1, clen, MAT.floor, ccx, -0.05, czc, { walkable: true, vinyl: true });
     kit.box(c1 - c0, 0.1, clen, MAT.ceiling, ccx, H + 0.05, czc, { worldUV: true });
     for (const wx of [c0 - 0.075, c1 + 0.075]) {
-      kit.box(0.15, 1.0, clen, MAT.wall, wx, 0.5, czc, { solid: true, trim: [wx < ccx ? 'x+' : 'x-'] });
-      kit.box(0.08, 1.7, clen, glass, wx, 1.85, czc, { solid: true });
-      kit.box(0.15, H - 2.7, clen, MAT.wall, wx, (H + 2.7) / 2, czc, {});
+      kit.box(0.15, 1.0, wallLen, MAT.wall, wx, 0.5, czc, { solid: true, trim: [wx < ccx ? 'x+' : 'x-'] });
+      kit.box(0.08, 1.7, wallLen, glass, wx, 1.85, czc, { solid: true });
+      kit.box(0.15, H - 2.7, wallLen, MAT.wall, wx, (H + 2.7) / 2, czc, {});
       for (let mz = czS + 2; mz < czN - 0.5; mz += 2) {
         kit.steelSpec({ w: 0.18, h: 1.7, d: 0.07, x: wx, y: 1.85, z: mz });
       }

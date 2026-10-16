@@ -3,6 +3,7 @@ import type { World, WorldClass } from '../types';
 import {
   makeBoardTexture,
   boardCellRects,
+  fitBoardRowSize,
   makeSignTexture,
   makeLazySign,
   makeNoticeTexture,
@@ -19,17 +20,23 @@ import {
 import { wingColor } from './colors';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MATS as MAT, mergeBoxMesh, scaleBoxUV, TRIM, type BoxSpec } from './materials';
+import { createBoxGeometry } from '../look/roundedBoxes';
 import { MAT_PEOPLE, seatedPersonGeometry, standingPersonGeometry, personRng } from './people';
 import { LiftDoors } from './lifts';
+import { CEILING_PANELS } from './ceilingLights';
 import { G, slug, type Layout } from '../../tools/lib/layout.mjs';
+import { logBox, BOX_LOG_ON } from '../audit/boxRegistry';
 
 export { MAT };
 
 /** The reception atrium's area id (lives here so the lift boards can target it). */
 export const ATRIUM_ID = '__atrium';
 
-/** The 5 mm core of double-sided hanging signs — its rim reads as the edge. */
+/** The 6 mm core of double-sided hanging signs — its rim reads as the edge. */
 const MAT_SIGN_EDGE = new THREE.MeshBasicMaterial({ color: 0x00417f });
+
+/** Each face of a hung sign sits 8 mm off centre: 5 mm clear of the core, so they never z-fight. */
+const HUNG_FACE_OFF = 0.008;
 
 export type InteractKind = 'door-out' | 'door-in' | 'door-self' | 'stair-up' | 'stair-down' | 'lift' | 'fire-exit';
 
@@ -52,6 +59,19 @@ export interface Interactable {
   /** Arrival point when this is the *destination* aperture of a paired door. */
   exitPos?: THREE.Vector3;
   exitYaw?: number;
+  /** A real door slab you open with E / the use button (world/doorSwing.ts swings it). */
+  doorway?: Doorway;
+}
+
+/** Where a door slab is, in world space, so its opening can be animated. */
+export interface Doorway {
+  /** Centre of the slab at floor level. */
+  center: THREE.Vector3;
+  /** Unit vector out of the wall, towards whoever stands at the door. */
+  normal: THREE.Vector3;
+  /** Unit vector along the wall towards the push plate — the leading edge. */
+  handleDir: THREE.Vector3;
+  width: number;
 }
 
 export interface BuiltArea {
@@ -149,6 +169,19 @@ export class AreaKit {
     return new THREE.Vector3(this.origin.x + this.f * x, this.origin.y + y, this.origin.z + this.f * z);
   }
 
+  /** A door slab's world placement: centre (local, at floor level), the local direction out of its wall. */
+  doorway(x: number, y: number, z: number, outX: number, outZ: number, width: number): Doorway {
+    // doorFurniture puts the push plate towards local +z on x-facing slabs, +x on z-facing ones
+    const handleX = outX ? 0 : 1;
+    const handleZ = outX ? 1 : 0;
+    return {
+      center: this.local(x, y, z),
+      normal: new THREE.Vector3(this.f * outX, 0, this.f * outZ),
+      handleDir: new THREE.Vector3(this.f * handleX, 0, this.f * handleZ),
+      width,
+    };
+  }
+
   /** Boxes are batched per material and merged in finalize() — one draw call each. */
   private batches = new Map<THREE.Material, (BoxSpec & { worldUV?: boolean })[]>();
 
@@ -177,6 +210,7 @@ export class AreaKit {
     );
     if (opts.solid) this.colliders.push(b);
     if (opts.walkable) this.walkables.push(b);
+    logBox(b, mat, this.group.name);
     if (opts.trim) for (const f of opts.trim) this.trimFace(f, w, h, d, x, y, z);
   }
 
@@ -189,7 +223,8 @@ export class AreaKit {
     const tx = face === 'x+' ? x + w / 2 + off : face === 'x-' ? x - w / 2 - off : x;
     const tz = face === 'z+' ? z + d / 2 + off : face === 'z-' ? z - d / 2 - off : z;
     this.trims.push(
-      { ...along, h: TRIM.skirtH, x: tx, y: bottom + TRIM.skirtH / 2, z: tz },
+      // 4 mm off the floor: its underside would otherwise share the wall's
+      { ...along, h: TRIM.skirtH, x: tx, y: bottom + TRIM.skirtH / 2 + 0.004, z: tz },
       { ...along, h: TRIM.railH, x: tx, y: bottom + TRIM.railCentre, z: tz }
     );
   }
@@ -197,6 +232,8 @@ export class AreaKit {
   /** Recessed LED panel just below a ceiling. */
   led(x: number, z: number, y: number, w = 0.6, d = 0.6) {
     this.leds.push({ w, h: 0.035, d, x, y, z });
+    // a 180° yaw keeps the panel's extents on the same world axes
+    CEILING_PANELS.push({ center: this.local(x, y - 0.02, z), width: w, depth: d });
   }
 
   /** Extra oak/steel details merged with the trim batches. */
@@ -293,11 +330,31 @@ export class AreaKit {
     }
   }
 
+  /** World AABB of a local box spec (a 180° yaw keeps the extents). Sloped rails are approximate. */
+  private specBox(s: BoxSpec) {
+    const c = this.local(s.x, s.y, s.z);
+    return new THREE.Box3(
+      new THREE.Vector3(c.x - s.w / 2, c.y - s.h / 2, c.z - s.d / 2),
+      new THREE.Vector3(c.x + s.w / 2, c.y + s.h / 2, c.z + s.d / 2)
+    );
+  }
+
   /** Merge every batch — walls, floors, doors, trims, plates, glass, LEDs, seats. */
   finalize() {
+    if (BOX_LOG_ON) {
+      for (const [specs, mat] of [
+        [this.trims, MAT.oak],
+        [this.plates, MAT.steel],
+        [this.glass, MAT.glass],
+        [this.leds, MAT.led],
+        [this.seats, MAT.chair],
+      ] as const) {
+        for (const s of specs) logBox(this.specBox(s), mat, this.group.name);
+      }
+    }
     for (const [mat, items] of this.batches) {
       const geos = items.map((s) => {
-        const g = new THREE.BoxGeometry(s.w, s.h, s.d);
+        const g = createBoxGeometry(s.w, s.h, s.d);
         if (s.worldUV) scaleBoxUV(g, s.w, s.h, s.d);
         g.translate(s.x, s.y, s.z);
         return g;
@@ -410,7 +467,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   kit.box(0.006, 0.44, 1.6, MAT_SIGN_EDGE, hangX, plateY, LD + 1.35, {});
   for (const s of [1, -1] as const) {
     kit.sign(
-      1.6, 0.44, hangX + s * 0.0035, plateY, LD + 1.35, (s * Math.PI) / 2,
+      1.6, 0.44, hangX + s * HUNG_FACE_OFF, plateY, LD + 1.35, (s * Math.PI) / 2,
       () =>
         makeSignTexture({
           widthPx: 800,
@@ -427,7 +484,12 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   }
 
   // wing wayfinding line, corridor end to the back opening
-  const lineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color) });
+  const lineMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(color),
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -2,
+  });
   kit.box(0.18, 0.012, LD + length, lineMat, 0, 0.012, (LD - length) / 2, {});
 
   // ---- area name over the corridor opening (faces the lobby) ---------------
@@ -466,8 +528,9 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
   // ---- definition poster in the LOBBY (right junction wall) ------------------
   // Readable the moment you arrive — no corridor walk needed. Text auto-fits
   // so even the longest definition is fully legible; R reads it as HTML too.
+  // Centred at 1.80 m so its foot (1.05) clears the oak trolley rail (to 1.03).
   kit.sign(
-    1.9, 1.5, 2.5, 1.62, 0.01, 0,
+    1.9, 1.5, 2.5, 1.8, 0.01, 0,
     () =>
       makeSignTexture({
         widthPx: 1024,
@@ -488,11 +551,13 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       }),
     `poster:${wc.label}`
   );
-  // illustration (when generated) on the matching left junction wall
+  // illustration (when generated) on the matching left junction wall: the
+  // frame stands proud of the wall (z 0.002–0.052), level with the poster and
+  // clear of the rail, the picture 6 mm in front of the frame
   if (ctx.illustrations?.has(slug(wc.label))) {
-    kit.oakSpec({ w: 1.3, h: 1.38, d: 0.05, x: -2.5, y: 1.62, z: -0.02 });
+    kit.oakSpec({ w: 1.3, h: 1.38, d: 0.05, x: -2.5, y: 1.8, z: 0.027 });
     kit.sign(
-      1.2, 1.28, -2.5, 1.62, 0.01, 0,
+      1.2, 1.28, -2.5, 1.8, 0.058, 0,
       () => loadImageTexture(`art/illustrations/${slug(wc.label)}.jpg`, 1.2 / 1.28),
       `illu:${wc.label}`
     );
@@ -539,14 +604,15 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     const z = zoneStart - (slot + 0.5) * G.NOTICE_SPACING;
     const seed = ((wc.id.charCodeAt(0) + wc.id.charCodeAt(3) * 31 + a * 7) >>> 0) % 997;
     const art = ctx.art.length ? ctx.art[seed % ctx.art.length] : null;
-    kit.oakSpec({ w: 0.05, h: 1.02, d: 1.36, x: side * (W / 2 - 0.035), y: 1.68, z });
+    // sized to the 1.25 m notice pitch (a full 1.42 m frame overlapped its neighbour)
+    kit.oakSpec({ w: 0.05, h: 0.9, d: 1.2, x: side * (W / 2 - 0.035), y: 1.68, z });
     kit.sign(
-      1.28, 0.94, side * (W / 2 - 0.075), 1.68, z, side > 0 ? -Math.PI / 2 : Math.PI / 2,
+      1.12, 0.82, side * (W / 2 - 0.075), 1.68, z, side > 0 ? -Math.PI / 2 : Math.PI / 2,
       () => (art ? loadImageTexture(`art/${art.file}`) : makePrintTexture(seed)),
       `print:${wc.label}:${a}`
     );
     kit.sign(
-      0.44, 0.13, side * (W / 2 - 0.075), 1.05, z, side > 0 ? -Math.PI / 2 : Math.PI / 2,
+      0.44, 0.13, side * (W / 2 - 0.075), 1.1, z, side > 0 ? -Math.PI / 2 : Math.PI / 2,
       () =>
         art
           ? makePlacardTexture(art.title, `${art.artist} · ${art.licence} · Wikimedia Commons`)
@@ -555,9 +621,8 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     );
   }
 
-  // ---- waiting chairs against the junction walls -------------------------------
-  kit.chair(2.35, 0, 0.42, 1);
-  kit.chair(2.95, 0, 0.42, 1);
+  // ---- waiting chairs against the left junction wall ---------------------------
+  // (the right wall is the definition poster's: sitters there hid its text)
   kit.chair(-2.35, 0, 0.42, 1);
   kit.chair(-2.95, 0, 0.42, 1);
 
@@ -586,7 +651,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     kit.box(1.3, 0.56, 0.006, MAT_SIGN_EDGE, hx, 2.42, z, {});
     for (const s of [1, -1] as const) {
       kit.sign(
-        1.3, 0.56, hx, 2.42, z + s * 0.0035, s > 0 ? 0 : Math.PI,
+        1.3, 0.56, hx, 2.42, z + s * HUNG_FACE_OFF, s > 0 ? 0 : Math.PI,
         () =>
           makeSignTexture({ widthPx: 760, heightPx: 328, title: signTitle, subtitle: signSubtitle, titleSize: 50 }),
         `doorsign:${label}:${s}`
@@ -603,12 +668,14 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       targetIds: [otherId],
       triggerPos: kit.local(wallX - sx * 0.45, 0, z),
       radius: 0.75,
-      halfX: 0.4, // hugs the wall: no accidental firing walking past off-centre
+      halfX: 0.4, // hugs the wall: walking past off-centre doesn't offer the door
       halfZ: 0.55,
-      auto: true,
+      auto: false,
+      prompt: `E — Open: ${label} → ${signTitle}`,
       // land clear of the return door's trigger zone (0.9 m from its centre)
       exitPos: kit.local(wallX - sx * 1.35, 0, z),
       exitYaw: (sx > 0 ? Math.PI / 2 : -Math.PI / 2) + flipYaw,
+      doorway: kit.doorway(wallX - sx * 0.05, 0, z, -sx, 0, G.DOOR_W),
     });
   };
 
@@ -667,7 +734,9 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       radius: 0.7,
       halfX: 0.55,
       halfZ: 0.45,
-      auto: true,
+      auto: false,
+      prompt: `E — Open: ${d.label} → ${wc.label}`,
+      doorway: kit.doorway(x, 0, -length + 0.06, 0, 1, G.DOOR_W),
     });
   });
   if (!selfCount) {
@@ -679,7 +748,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       kit.steelSpec({ w: 0.7, h: 0.05, d: 0.05, x: dx, y: 1.05, z: -length + 0.13 }); // panic bar
       kit.steelSpec({ w: 0.7, h: 0.22, d: 0.02, x: dx, y: 0.13, z: -length + 0.11 }); // kick plate
     }
-    kit.steelSpec({ w: 0.04, h: G.DOOR_H, d: 0.03, x: 0, y: G.DOOR_H / 2, z: -length + 0.11 }); // meeting stile
+    kit.steelSpec({ w: 0.04, h: G.DOOR_H - 0.01, d: 0.03, x: 0, y: (G.DOOR_H - 0.01) / 2, z: -length + 0.11 }); // meeting stile
     kit.sign(
       1.1, 0.34, 0, G.DOOR_H + 0.35, -length + 0.07, 0,
       () =>
@@ -742,15 +811,16 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     boardRows.push({ text: '⌂ Reception' });
     boardDests.push(ATRIUM_ID);
   }
-  const boardSpec = {
+  const boardBase = {
     widthPx: 850,
     heightPx: 750,
     title: hasLift ? 'Lift' : 'Exit',
     subtitle: wc.label,
     rows: boardRows,
-    rowSize: boardRows.length > 10 ? 30 : 38,
     columns: boardRows.length > 10 ? 2 : 1,
   };
+  // rows shrink until every destination fits (a fixed 30 px lost the tail of long lists)
+  const boardSpec = { ...boardBase, rowSize: fitBoardRowSize(boardBase, [38, 34, 30, 27, 24, 21, 18]) };
   const boardCells = (() => {
     const rects = boardCellRects(boardSpec, boardRows.length);
     return boardRows.flatMap((r, i) =>
@@ -793,8 +863,9 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       `liftcall:${wc.label}`
     );
     // "LIFT" indicator on the header, showing this floor
+    // above the steel header strip (it tops out at 2.185) and below the cab top (2.4)
     kit.sign(
-      0.72, 0.24, cx0 - 0.015, 2.27, 5.65, -Math.PI / 2,
+      0.6, 0.2, cx0 - 0.015, 2.29, 5.65, -Math.PI / 2,
       () =>
         makeSignTexture({
           widthPx: 384,
@@ -839,7 +910,8 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       `liftsmoke:${wc.label}`
     );
     // in-cab destination board: tap a row to ride (same cells as the lobby's)
-    cabBoardMesh = kit.sign(0.95, 1.05, ccx - 0.08, 1.3, cz0 + 0.09, 0, () => makeBoardTexture(boardSpec), `liftcab:${wc.label}`);
+    // between the handrail (tops out at 0.945) and the load plate (from 1.945)
+    cabBoardMesh = kit.sign(0.88, 0.97, ccx - 0.08, 1.45, cz0 + 0.09, 0, () => makeBoardTexture(boardSpec), `liftcab:${wc.label}`);
     liftPos = kit.local(ccx, 0, ccz);
     liftYaw = Math.PI / 2 + flipYaw; // arriving passengers face the doorway
     interactables.push({
@@ -871,8 +943,9 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
     const z = 6.35 - i * 1.15;
     kit.box(0.1, G.DOOR_H, 1.0, MAT.door, -(LW / 2) + 0.06, G.DOOR_H / 2, z, {});
     kit.doorFurniture('x+', -(LW / 2) + 0.06, 0, z);
+    // 1.1 m wide: the doors are 1.15 m apart, and wider signs overlapped
     kit.sign(
-      1.35, 0.42, -(LW / 2) + 0.1, G.DOOR_H + 0.4, z, Math.PI / 2,
+      1.1, 0.344, -(LW / 2) + 0.1, G.DOOR_H + 0.4, z, Math.PI / 2,
       () =>
         makeSignTexture({
           widthPx: 768,
@@ -892,7 +965,8 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       radius: 0.7,
       halfX: 0.45,
       halfZ: 0.55,
-      auto: true,
+      auto: false,
+      doorway: kit.doorway(-(LW / 2) + 0.06, 0, z, 1, 0, 1.0),
     });
   });
 
@@ -907,7 +981,7 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
       kit.box(0.1, G.DOOR_H, 1.0, MAT.door, -(LW / 2) + 0.06, G.DOOR_H / 2, z, {});
       kit.doorFurniture('x+', -(LW / 2) + 0.06, 0, z);
       kit.sign(
-        1.35, 0.42, -(LW / 2) + 0.1, G.DOOR_H + 0.4, z, Math.PI / 2,
+        1.1, 0.344, -(LW / 2) + 0.1, G.DOOR_H + 0.4, z, Math.PI / 2,
         () =>
           makeSignTexture({
             widthPx: 768,
@@ -927,25 +1001,28 @@ export function buildArea(wc: WorldClass, ctx: BuildCtx, origin: THREE.Vector3):
         radius: 0.7,
         halfX: 0.45,
         halfZ: 0.55,
-        auto: true,
+        auto: false,
+        doorway: kit.doorway(-(LW / 2) + 0.06, 0, z, 1, 0, 1.0),
       });
     });
   }
 
-  // pit-side board listing all subtypes (kept from Stage 1, on the left wall)
-  if (wc.subs.length) {
+  // pit-side board listing all subtypes (kept from Stage 1, on the left wall) —
+  // only beside a real stairwell: without one, the portal doors carry their own
+  // signs, and this board ran across them
+  if (wc.subs.length && landing) {
     const subsLabels = wc.subs.map((id) => byId.get(id)?.label ?? '?');
+    const stairsBase = {
+      widthPx: 900,
+      heightPx: 400,
+      title: 'Stairs ↓',
+      rows: subsLabels.map((l) => ({ text: l })),
+      columns: subsLabels.length > 9 ? 3 : subsLabels.length > 3 ? 2 : 1,
+    };
+    const stairsSpec = { ...stairsBase, rowSize: fitBoardRowSize(stairsBase, [44, 38, 34, 30, 27, 24, 21, 18]) };
     kit.sign(
       1.9, 0.85, -(LW / 2) + 0.09, 2.45, 3.3, Math.PI / 2,
-      () =>
-        makeBoardTexture({
-          widthPx: 900,
-          heightPx: 400,
-          title: 'Stairs ↓',
-          rows: subsLabels.map((l) => ({ text: l })),
-          rowSize: subsLabels.length > 6 ? 34 : 44,
-          columns: subsLabels.length > 8 ? 2 : 1,
-        }),
+      () => makeBoardTexture(stairsSpec),
       `stairsdown:${wc.label}`
     );
   }
@@ -1025,16 +1102,18 @@ function buildStairwellAndLanding(
   }
   // half landing at the south end
   kit.box(pitW, 0.1, HALF, MAT.oak, (G.PIT_X0 + G.PIT_X1) / 2, -S / 2 - 0.05, G.PIT_Z0 + HALF / 2, { walkable: true });
-  // flight B (east lane): descends south→north to one storey down
-  for (let t = 0; t < nT; t++) {
+  // flight B (east lane): descends south→north to one storey down — its last
+  // step down is onto the passage floor itself (a 12th tread would lie flush in it)
+  for (let t = 0; t < nT - 1; t++) {
     const topY = -S / 2 - ((t + 1) * (S / 2)) / nT;
     kit.box(laneW, 0.09, going + 0.02, MAT.oak, eastLaneC, topY - 0.045, G.PIT_Z0 + HALF + (t + 0.5) * going, { walkable: true });
   }
   // passage from the stair foot under the lobby back strip to the landing
   kit.box(pitW, 0.1, G.LOBBY_D - G.PIT_Z1 + 0.1, MAT.floor, (G.PIT_X0 + G.PIT_X1) / 2, -S - 0.05, (G.PIT_Z1 + G.LOBBY_D) / 2, { walkable: true, vinyl: true });
   // pit-bottom floor under the flights — the open balustrade made the void
-  // beneath the stairs visible (owner screenshot)
-  kit.box(pitW + 0.2, 0.1, G.PIT_Z1 - G.PIT_Z0 + 0.1, MAT.floor, (G.PIT_X0 + G.PIT_X1) / 2, -S - 0.05, (G.PIT_Z0 + G.PIT_Z1) / 2, { walkable: true, vinyl: true });
+  // beneath the stairs visible (owner screenshot). Wall to wall: run under the
+  // west shaft wall, its end lay in that wall's outer face
+  kit.box(pitW, 0.1, G.PIT_Z1 - G.PIT_Z0 + 0.1, MAT.floor, (G.PIT_X0 + G.PIT_X1) / 2, -S - 0.05, (G.PIT_Z0 + G.PIT_Z1) / 2, { walkable: true, vinyl: true });
   // painted soffits close the flights' undersides (open risers otherwise
   // show sky between the treads from below)
   {
@@ -1053,9 +1132,13 @@ function buildStairwellAndLanding(
   // shaft walls — painted light, 1960s stairwells weren't dungeon-dark
   const shaftH = S + G.ROOM_H; // full depth wall from pit bottom to lobby ceiling
   kit.box(0.1, shaftH, G.LOBBY_D - G.PIT_Z0, MAT.wall, G.PIT_X0 - 0.05, -S + shaftH / 2 - G.ROOM_H, (G.PIT_Z0 + G.LOBBY_D) / 2); // west side (under lobby wall)
-  kit.box(0.1, S, G.PIT_Z1 - G.PIT_Z0, MAT.wall, G.PIT_X1 + 0.05, -S / 2, (G.PIT_Z0 + G.PIT_Z1) / 2); // east side below floor
-  kit.box(0.1, S, G.LOBBY_D - G.PIT_Z1, MAT.wall, G.PIT_X1 + 0.05, -S / 2, (G.PIT_Z1 + G.LOBBY_D) / 2); // passage east wall
-  kit.box(pitW + 0.2, S, 0.1, MAT.wall, (G.PIT_X0 + G.PIT_X1) / 2, -S / 2, G.PIT_Z0 - 0.05); // south end
+  // the walls under the lobby floor stop at its underside (y −0.1): flush with
+  // its walking face they z-fought along every pit edge
+  const underFloorH = S - 0.1;
+  const underFloorY = -S + underFloorH / 2;
+  kit.box(0.1, underFloorH, G.PIT_Z1 - G.PIT_Z0, MAT.wall, G.PIT_X1 + 0.05, underFloorY, (G.PIT_Z0 + G.PIT_Z1) / 2); // east side below floor
+  kit.box(0.1, underFloorH, G.LOBBY_D - G.PIT_Z1, MAT.wall, G.PIT_X1 + 0.05, underFloorY, (G.PIT_Z1 + G.LOBBY_D) / 2); // passage east wall
+  kit.box(pitW + 0.2, underFloorH, 0.1, MAT.wall, (G.PIT_X0 + G.PIT_X1) / 2, underFloorY, G.PIT_Z0 - 0.05); // south end
 
   // ---- open timber banisters (period 1960s — no solid panels) --------------
   // Each run is an oak handrail with slim balusters; an invisible collider
@@ -1247,7 +1330,8 @@ function buildStairwellAndLanding(
         radius: 0.7,
         halfX: 0.55,
         halfZ: 0.45,
-        auto: true,
+        auto: false,
+        doorway: kit.doorway(x, y, G.LANDING_Z1 - 0.05, 0, -1, G.DOOR_W),
       });
     } else {
       // east cap wall, facing west along the landing
@@ -1265,7 +1349,8 @@ function buildStairwellAndLanding(
         radius: 0.7,
         halfX: 0.45,
         halfZ: 0.55,
-        auto: true,
+        auto: false,
+        doorway: kit.doorway(lx1 - 0.05, y, zc, -1, 0, G.DOOR_W),
       });
     }
   });

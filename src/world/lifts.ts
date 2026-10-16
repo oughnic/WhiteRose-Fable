@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MATS } from './materials';
+import { createBoxGeometry } from '../look/roundedBoxes';
 
 /**
  * Sliding lift doors: two stainless leaves that part behind the jambs.
@@ -18,7 +19,7 @@ export class LiftDoors {
     x: number,
     private zc: number
   ) {
-    const geo = new THREE.BoxGeometry(0.05, 2.06, 0.5);
+    const geo = createBoxGeometry(0.05, 2.06, 0.5);
     const mat = MATS.liftDoor;
     this.leafA = new THREE.Mesh(geo, mat);
     this.leafB = new THREE.Mesh(geo.clone(), mat);
@@ -33,6 +34,13 @@ export class LiftDoors {
     const o = this.openT * 0.48;
     this.leafA.position.z = this.zc - 0.25 - o;
     this.leafB.position.z = this.zc + 0.25 + o;
+  }
+
+  /** Jump straight to an openness (0 shut, 1 open) — a lift ride arrives with the doors shut. */
+  snapTo(openness: number) {
+    this.target = openness;
+    this.openT = openness;
+    this.update(0);
   }
 
   get openness() {

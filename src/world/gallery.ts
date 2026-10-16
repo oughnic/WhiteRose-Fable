@@ -87,10 +87,10 @@ export function buildGallery(
   }
   // headers over the lobby openings (root walls are 3 m; the gallery is 4)
   for (const r of rootXs) {
-    kit.box(G.LOBBY_W, H - G.ROOM_H, 0.15, MAT.wall, r.x, (H + G.ROOM_H) / 2, z0 - 0.075, {});
+    kit.box(G.LOBBY_W, H - G.ROOM_H - 0.1, 0.15, MAT.wall, r.x, (H + G.ROOM_H + 0.1) / 2, z0 - 0.075, {}); // over the lobby ceiling slab
   }
   // header over the entrance (3 m opening)
-  kit.box(e1 - e0, H - 3, 0.15, MAT.wall, (e0 + e1) / 2, (H + 3) / 2, z0 - 0.075, {});
+  kit.box(e1 - e0, H - 3.1, 0.15, MAT.wall, (e0 + e1) / 2, (H + 3.1) / 2, z0 - 0.075, {}); // over the link ceiling slab
 
   // wing signs over the openings + the gallery name at the east end
   rootXs.forEach((r) => {
@@ -109,8 +109,9 @@ export function buildGallery(
       `gallery:${root?.label}`
     );
   });
+  // faces west, down the gallery (not into the east cap wall)
   kit.sign(
-    3.4, 0.8, x1 - 0.4, 2.7, zc, Math.PI / 2,
+    3.4, 0.8, x1 - 0.4, 2.7, zc, -Math.PI / 2,
     () =>
       makeSignTexture({
         widthPx: 1280,
@@ -123,8 +124,14 @@ export function buildGallery(
   );
 
   // ---- L-link back to the Postgraduate Medical Centre ----------------------
+  // corridor A spans exactly the PMC's west doorway (theatre.ts, z 20–21.8), so
+  // its walls run on in line with the doorway jambs
+  const az0 = 20.0;
+  const az1 = 21.8;
+  // its walls stop at the PMC's brick skin (x = −24.27): the jambs beyond are the pavilion's
+  const wallEnd = -24.27;
   // corridor B: north–south, from the gallery entrance down to the PMC level
-  const bz0 = 21.2;
+  const bz0 = az1;
   kit.box(e1 - e0, 0.1, z0 - bz0, MAT.floor, (e0 + e1) / 2, -0.05, (bz0 + z0) / 2, { walkable: true, vinyl: true });
   kit.box(e1 - e0, 0.1, z0 - bz0, MAT.ceiling, (e0 + e1) / 2, 3.05, (bz0 + z0) / 2, { worldUV: true });
   for (const wx of [e0 - 0.075, e1 + 0.075]) {
@@ -132,17 +139,17 @@ export function buildGallery(
   }
   for (let lz = bz0 + 2; lz < z0 - 1; lz += 4) kit.led((e0 + e1) / 2, lz, 2.98);
   // corridor A: east–west, from corridor B's foot to the PMC west wall (x=-24)
-  const az0 = 19.2;
-  const az1 = 21.2;
   kit.box(-24 - e0, 0.1, az1 - az0, MAT.floor, (e0 + -24) / 2, -0.05, (az0 + az1) / 2, { walkable: true, vinyl: true });
-  kit.box(-24 - e0, 0.1, az1 - az0, MAT.ceiling, (e0 + -24) / 2, 3.05, (az0 + az1) / 2, { worldUV: true });
-  kit.box(-24 - e0 + 0.15, 3, 0.15, MAT.wall, (e0 + -24) / 2 - 0.05, 1.5, az0 - 0.075, { solid: true, trim: ['z+'] }); // south
-  kit.box(-24 - e1, 3, 0.15, MAT.wall, (e1 + -24) / 2, 1.5, az1 + 0.075, { solid: true, trim: ['z-'] }); // north, east of corridor B
+  // the ceiling ends inside the pavilion's brick skin: at x −24 its end lay in the hall header's face
+  kit.box(-24.2 - e0, 0.1, az1 - az0, MAT.ceiling, (e0 + -24.2) / 2, 3.05, (az0 + az1) / 2, { worldUV: true });
+  kit.box(wallEnd - e0 + 0.15, 3, 0.15, MAT.wall, (e0 - 0.15 + wallEnd) / 2, 1.5, az0 - 0.075, { solid: true, trim: ['z+'] }); // south
+  kit.box(wallEnd - e1, 3, 0.15, MAT.wall, (e1 + wallEnd) / 2, 1.5, az1 + 0.075, { solid: true, trim: ['z-'] }); // north, east of corridor B
   kit.box(0.15, 3, az1 - az0 + 0.3, MAT.wall, e0 - 0.075, 1.5, (az0 + az1) / 2, { solid: true, trim: ['x+'] }); // west cap
   kit.led((e0 - 24) / 2, (az0 + az1) / 2, 2.98);
-  // sign at the corridor junction pointing on to the gallery
+  // sign at the corridor junction pointing on to the gallery — faces corridor A,
+  // where you turn north into corridor B
   kit.sign(
-    1.9, 0.5, (e0 + e1) / 2, 2.55, bz0 + 0.09, 0,
+    1.9, 0.5, (e0 + e1) / 2, 2.55, bz0 + 0.09, Math.PI,
     () =>
       makeSignTexture({
         widthPx: 960,

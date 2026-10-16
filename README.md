@@ -42,7 +42,8 @@ To use a newer model export: replace the file in `data/` (or pass a path:
 
 ## Controls
 
-Desktop: WASD move (Shift runs) · mouse look · **E** interact (lifts) ·
+Desktop: WASD move (Shift runs) · mouse look · **E** opens the door you're
+facing (and uses lifts and fire exits) ·
 **click a lift-board row** to travel there (crosshair when the mouse is
 captured, pointer otherwise) · **B** back to your last stop ·
 **F** jump ahead 12 m · **R** read the current area as accessible HTML ·
@@ -50,10 +51,37 @@ captured, pointer otherwise) · **B** back to your last stop ·
 
 Touch (phones, tablets and touch-screen PCs — works alongside the mouse):
 left thumb pad to walk (push to the edge to run) · **drag anywhere on the
-view to look around** · tap the blue prompt to use a lift, or **tap a row
-on the lift board directly** · **↩** back · **⏩** jumps ahead · **ℹ** reads
+view to look around** · **✋** (shown only when something is in front of
+you) or the blue prompt opens a door or uses a lift, or **tap a row on the
+lift board directly** · **↩** back · **⏩** jumps ahead · **ℹ** reads
 the area · **⌖** calls the porter. (Mouse users can drag-look too, without
-pointer lock.)
+pointer lock.) The round buttons show on every device; the thumb pad only
+while you're using touch or a pen — a mouse click hides it, a tap brings it
+back.
+
+Lifts: pick a floor and the cab doors close, the car rides with you shut
+inside, and the doors open after the chime at the destination.
+
+Minimap (top left, under the area sign): a plan of the storey you're on, by
+wing colour, with your area outlined and an arrow for you. By default it
+turns with you, so what's ahead is up; the **N** on the rim points to the
+north street. The storey above shows faintly underneath, and the strip
+beside it (G, −1 … −5) lights your floor. Floors are concept depth, so going
+down a level means a more specific concept. H hides it with the rest of the
+interface.
+
+Doors (associations, self-references and the stair portal doors) never fire
+by walking into them. Face one and it's offered (E / ✋). Then you step back
+square to it, it swings open towards you, and you go through. Backing into a
+door does nothing.
+
+Debug (dev server, or any build with `?audit`): `__hospital.zfight()` lists
+coplanar faces that z-fight, `__hospital.signAudit()` lists signs cut,
+blocked or facing a wall and signs whose text overflows, and
+`__hospital.boxesAt(x, y, z)` shows which boxes meet at a point. Add
+`#debug` to the URL (works on any build) to load a Tweakpane panel —
+`__hospital.debugPane()` returns it for adding bindings; Tweakpane is never
+downloaded without the hash.
 
 Definitions are on the lobby poster the moment you arrive (auto-fitted, so
 even the longest is fully readable); ceiling-hung signs name each concept
@@ -65,8 +93,22 @@ persistent contsys.org slug, its hyphen alias, or the spaced label
 (`care%20plan`) all work; `?start=theatre` starts at the lecture-theatre
 lectern; `?present=1` starts with the interface hidden (as if H were
 pressed), ready to film; `?people=off|low|full` overrides the activity
-tier. Each concept's reader (R) links to its full definition at
+tier; `?look=current|toon|sketch` picks the A/B test look (see below). Each
+concept's reader (R) links to its full definition at
 `contsys.org/concept/{slug}`.
+
+Look A/B test (debug panel, `#debug` → Look A/B; the choice is remembered, and
+changing it reloads the page where you stand):
+
+- **current** — standard (PBR) materials lit by the ceiling panels, with
+  bounce light from a light probe that walks with you (Lighting › Bounce
+  light) and a barely-there relief on the painted walls (Wall finish).
+- **toon** — toon materials, rounded boxes (no hard edges), a screen-space
+  outline, and hemisphere fill + a directional key light + a lamp that walks
+  with you.
+- **sketch** — flat colour under a "sketchy drawing" post-process (lines and
+  colour wobbled apart by noise, after Nienhaus & Döllner, GPU Gems 2 ch. 15),
+  on paper, with a blueprint minimap.
 
 ## Filming a presentation
 

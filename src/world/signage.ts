@@ -62,6 +62,11 @@ export function makeSignTexture(spec: SignSpec): THREE.CanvasTexture {
   ctx.textAlign = align;
   ctx.textBaseline = 'top';
 
+  const maxWidth = spec.widthPx - pad * 2;
+  // a word wider than the sign can't wrap: it runs off the edge
+  const tooWide = (lines: string[]) => lines.some((l) => ctx.measureText(l).width > maxWidth + 1);
+  let overflow = false;
+
   let y = pad;
   let titleSize = spec.titleSize ?? Math.round(spec.heightPx * 0.28);
   let subSize = spec.subtitleSize ?? Math.round(titleSize * 0.55);
@@ -82,7 +87,9 @@ export function makeSignTexture(spec: SignSpec): THREE.CanvasTexture {
     }
   }
   ctx.font = `bold ${titleSize}px Arial`;
-  for (const line of wrap(ctx, spec.title, spec.widthPx - pad * 2)) {
+  const titleLines = wrap(ctx, spec.title, maxWidth);
+  overflow ||= tooWide(titleLines);
+  for (const line of titleLines) {
     ctx.fillText(line, x, y);
     y += titleSize * 1.15;
   }
@@ -90,12 +97,16 @@ export function makeSignTexture(spec: SignSpec): THREE.CanvasTexture {
   if (spec.subtitle) {
     ctx.font = `${subSize}px Arial`;
     ctx.globalAlpha = 0.85;
-    for (const line of wrap(ctx, spec.subtitle, spec.widthPx - pad * 2)) {
+    const subLines = wrap(ctx, spec.subtitle, maxWidth);
+    overflow ||= tooWide(subLines);
+    for (const line of subLines) {
       ctx.fillText(line, x, y);
       y += subSize * 1.2;
     }
     ctx.globalAlpha = 1;
   }
+  // title + subtitle signs shrink to fit, but stop at 18 px
+  if (!spec.body && y > spec.heightPx - pad * 0.5) overflow = true;
 
   if (spec.body) {
     y += pad * 0.5;
@@ -111,10 +122,14 @@ export function makeSignTexture(spec: SignSpec): THREE.CanvasTexture {
       }
     }
     ctx.font = `${s}px Arial`;
-    for (const line of wrap(ctx, spec.body, spec.widthPx - pad * 2)) {
+    const bodyLines = wrap(ctx, spec.body, maxWidth);
+    overflow ||= tooWide(bodyLines);
+    for (const line of bodyLines) {
       ctx.fillText(line, x, y);
       y += s * 1.3;
     }
+    const footerPx = spec.footer ? Math.round(titleSize * 0.32) * 2.6 + pad : pad * 0.5;
+    if (y > spec.heightPx - footerPx) overflow = true;
   }
 
   if (spec.footer) {
@@ -133,6 +148,8 @@ export function makeSignTexture(spec: SignSpec): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 4;
   tex.colorSpace = THREE.SRGBColorSpace;
+  // read by the sign audit (__hospital.signAudit)
+  if (overflow) tex.userData.overflow = true;
   return tex;
 }
 
@@ -167,14 +184,20 @@ export function makeNoticeTexture(header: string, headerColor: string, body: str
   }
   ctx.font = `${s}px Arial`;
   let y = 130;
-  for (const line of wrap(ctx, body, 560)) {
-    ctx.fillText(line, 30, y);
+  let overflow = false;
+  const lines = wrap(ctx, body, 560);
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], 30, y);
     y += s * 1.35;
-    if (y > 810 - 40) break; // beyond even 16 px — truncate as a last resort
+    if (y > 810 - 40 && i < lines.length - 1) {
+      overflow = true;
+      break; // beyond even 16 px — truncate as a last resort
+    }
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 4;
   tex.colorSpace = THREE.SRGBColorSpace;
+  if (overflow) tex.userData.overflow = true;
   return tex;
 }
 
@@ -314,6 +337,15 @@ function boardMetrics(spec: BoardSpec) {
   return { pad, titleSize, top, ruleY, columns, colWidth, rowSize, rowH, rowsPerCol };
 }
 
+/** The largest row size (from `sizes`, biggest first) at which every row fits the board. */
+export const fitBoardRowSize = (spec: Omit<BoardSpec, 'rowSize'>, sizes: number[]) => {
+  for (const rowSize of sizes) {
+    const m = boardMetrics({ ...spec, rowSize });
+    if (m.rowsPerCol * m.columns >= spec.rows.length) return rowSize;
+  }
+  return sizes[sizes.length - 1];
+};
+
 /**
  * UV rectangles [u0, v0, u1, v1] for each row (null when a row overflows the
  * board) — lets a raycast hit on the mesh resolve to the row under the pointer.
@@ -404,6 +436,7 @@ export function makeBoardTexture(spec: BoardSpec): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
   tex.anisotropy = 4;
   tex.colorSpace = THREE.SRGBColorSpace;
+  if (spec.rows.length > rowsPerCol * columns) tex.userData.overflow = true;
   return tex;
 }
 
@@ -412,7 +445,7 @@ export function makeBoardTexture(spec: BoardSpec): THREE.CanvasTexture {
  * rasterises canvas textures for signs near the player (161 areas ≈ 1,100
  * signs — rendering them all up front would cost hundreds of MB of texture).
  */
-interface SignEntry {
+export interface SignEntry {
   pos: THREE.Vector3;
   mesh: THREE.Mesh;
   make: () => THREE.Texture;
@@ -462,9 +495,15 @@ export function loadImageTexture(path: string, aspect = 1.36): THREE.Texture {
   return tex;
 }
 
+/**
+ * Signs hang a few millimetres off walls and frames: a depth offset makes them always
+ * win the depth test against the surface behind them, at any distance.
+ */
+export const DECAL_OFFSET = { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 } as const;
+
 export class SignManager {
   private entries: SignEntry[] = [];
-  private placeholder = new THREE.MeshBasicMaterial({ color: new THREE.Color(NHS_BLUE) });
+  private placeholder = new THREE.MeshBasicMaterial({ color: new THREE.Color(NHS_BLUE), ...DECAL_OFFSET });
 
   register(mesh: THREE.Mesh, worldPos: THREE.Vector3, make: () => THREE.Texture) {
     mesh.material = this.placeholder;
@@ -495,13 +534,17 @@ export class SignManager {
     }
     wanted.sort((a, b) => a.d - b.d);
     for (const { e } of wanted.slice(0, budget)) {
-      e.mesh.material = new THREE.MeshBasicMaterial({ map: e.make() });
+      e.mesh.material = new THREE.MeshBasicMaterial({ map: e.make(), ...DECAL_OFFSET });
       e.ready = true;
     }
   }
 
   get count() {
     return this.entries.length;
+  }
+  /** Every registered sign (debug audits only). */
+  get all(): readonly Readonly<SignEntry>[] {
+    return this.entries;
   }
   get readyCount() {
     return this.entries.filter((e) => e.ready).length;
@@ -519,7 +562,7 @@ export function makeLazySign(
 ): THREE.Mesh {
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(widthM, heightM),
-    new THREE.MeshBasicMaterial()
+    new THREE.MeshBasicMaterial(DECAL_OFFSET)
   );
   mesh.name = name;
   signs.register(mesh, worldPos, make);

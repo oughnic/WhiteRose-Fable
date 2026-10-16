@@ -22,7 +22,9 @@ export class Player {
   private touch = { f: 0, s: 0 }; // analog move, −1..1
 
   constructor(domElement: HTMLElement) {
-    this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.05, 160);
+    // near 0.1, not 0.05: double the depth precision (less z-fighting) and still
+    // inside RADIUS, so no wall ever gets close enough to be clipped
+    this.camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 160);
     this.camera.position.set(0, EYE_HEIGHT, 0);
     this.camera.rotation.order = 'YXZ';
     this.controls = new PointerLockControls(this.camera, domElement);
@@ -139,9 +141,10 @@ export class Player {
     return new THREE.Vector3(this.camera.position.x, this.feetY, this.camera.position.z);
   }
 
-  teleport(pos: { x: number; y?: number; z: number }, yaw: number) {
+  /** Pitch defaults to level; a lift ride passes the current one so the cut is seamless. */
+  teleport(pos: { x: number; y?: number; z: number }, yaw: number, pitch = 0) {
     this.camera.position.set(pos.x, (pos.y ?? 0) + EYE_HEIGHT, pos.z);
-    this.camera.rotation.set(0, yaw, 0);
+    this.camera.rotation.set(pitch, yaw, 0);
     // travel puts the binoculars down — arriving anywhere at 4× would disorient
     if (this.camera.zoom !== 1) {
       this.camera.zoom = 1;

@@ -17,6 +17,14 @@ Hard rules:
 - Do not rename the Postgraduate Medical Centre — it is a load-bearing part of the content
   plan (INTEGRATION.md §4).
 
+Debug panel (Tweakpane, loaded only with `#debug` in the URL — `src/debug/debugPane.ts`):
+
+- Unless the user says otherwise, every new feature exposes its parameters in the panel
+  (register them with `addDebugControls`). Give each control a label that says what it
+  does.
+- If a request doesn't say which parameters to expose, or a parameter's meaning isn't
+  obvious, remind the user: list what was exposed, what wasn't, and explain unclear ones.
+
 Build: Node 24 (portable install at `C:\Users\Nicholas\tools\node-v24.18.0-win-x64` on the
 owner's machine) — `npm install`, `npm run world` (model → world.json), `npm run audit`,
 `npm run build`. README.md documents controls and URL parameters.
